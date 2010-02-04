@@ -102,11 +102,16 @@ if __name__ == "__main__":
 	con = NetworkManagerConnection(bus, set.list_connections()[0])
 
 	set = con.get_settings()
-	print set['connection']['type']
-	print set['connection']['uuid']
-	print set['connection']['id']
+	print "Type: %s" % set['connection']['type']
+	print "UUID: %s" % set['connection']['uuid']
+	print "Connection %s: " % set['connection']['id']
+	print "Routes: %s" % set['ipv4']['routes']
+	print "Addresses: %s" % set['ipv4']['addresses']
+	print "DNS: %s" % set['ipv4']['dns']
+	print "Method: %s" % set['ipv4']['method']
 	
-	print set['802-3-ethernet']['mac-address']
+	#print set
+	#['802-3-ethernet']['mac-address']
 	#for k in con.get_settings().keys():
 	#	for v in k.keys():
 	#		print v
