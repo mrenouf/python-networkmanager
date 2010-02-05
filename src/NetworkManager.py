@@ -4,24 +4,56 @@ import glib
 import gtk
 import dbus
 
-class NetworkManager(object):
+ETH="802-3-ethernet"
 
+NM_NAME="org.freedesktop.NetworkManager"
+NM_PATH="/org/freedesktop/NetworkManager"
+NM_IFACE="org.freedesktop.NetworkManager"
+NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
+NM_SETTINGS_IFACE="org.freedesktop.NetworkManagerSettings"
+
+class NetworkManager(object):
 	def __init__(self, bus):
 		self.bus = bus
-		self.proxy = self.bus.get_object(
-			"org.freedesktop.NetworkManager",
-			"/org/freedesktop/NetworkManager")
-			
-		#self.GetDevices = self.proxy.get_dbus_method("GetDevices", dbus_interface='com.example.Bar')
+		self.proxy = self.bus.get_object(NM_NAME, NM_PATH)
+		self.settings = bus.get_object(NM_NAME, NM_SETTINGS_PATH)
 
 	def __getattr__(self, name):
-		return self.proxy.Get('org.freedesktop.NetworkManager', name)
+		return self.proxy.Get(NM_IFACE, name)
 	
 	def get_devices(self):
 		"""
 		Returns a list of object paths of network devices known to the system
 		"""
+		#		for d in self.proxy.GetDevices():	
 		return [NetworkManagerDevice(self.bus, d) for d in self.proxy.GetDevices()];
+
+	def activate_connection(self):
+		pass
+	
+	def deactivate_connection(self):
+		pass
+		
+	def sleep(self, sleep):
+		pass
+	
+	def list_connections(self):
+		return self.settings.ListConnections(dbus_interface=NM_SETTINGS_IFACE)
+		
+	def add_connection(self):
+		pass
+		
+	def get_connection(self, path):
+		return NetworkManagerConnection(self.bus, path)
+		
+		
+	def get_settings(self):
+		"""
+		Returns a wrapper providing access to NetorkManagerSettings 
+		for accessing system connection settings
+		"""
+		return self.settings
+
 
 class NetworkManagerDevice(object):
 	#self.interface = 
@@ -50,12 +82,10 @@ class NetworkManagerDevice(object):
 
 class NetworkManagerSettings():
 	def __init__(self, bus):
-		self.proxy = bus.get_object(
-			"org.freedesktop.NetworkManager",
-			"/org/freedesktop/NetworkManagerSettings")
+		self.proxy = bus.get_object(NM_NAME, NM_SETTINGS_PATH)
 		
 	def list_connections(self):
-		return self.proxy.ListConnections(dbus_interface='org.freedesktop.NetworkManagerSettings')
+		return self.proxy.ListConnections(dbus_interface=NM_SETTINGS_IFACE)
 	
 	def add_connection(self, properties):
 		pass
