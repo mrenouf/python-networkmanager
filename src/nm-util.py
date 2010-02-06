@@ -4,10 +4,10 @@ import sys
 from networkmanager import NetworkManager, DeviceType, DeviceState, DeviceStateReason, DeviceCap
 
 def main(argv=None):
-	if argv is None:
-		argv = sys.argv
+    if argv is None:
+        argv = sys.argv
 
-	nm = NetworkManager()
+    nm = NetworkManager()
 
     for device in nm.get_devices():
         print device.type
@@ -46,6 +46,6 @@ def main(argv=None):
 	#		print v
 
 if __name__ == "__main__":
-	main(sys.argv)	
+    main(sys.argv)	
 		
 
