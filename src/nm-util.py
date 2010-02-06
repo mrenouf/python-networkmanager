@@ -6,12 +6,23 @@ from networkmanager import NetworkManager, DeviceType, DeviceState, DeviceStateR
 def main(argv=None):
 	if argv is None:
 		argv = sys.argv
+
 	nm = NetworkManager()
-	
-	for device in nm.get_devices():
-		print device.get_interface()
-		print device.get_type()
-		print device.get_driver()
+
+    for device in nm.get_devices():
+        print device.type
+        print device.interface
+        print device.driver
+        print device.state
+        if (device.type == DeviceType.ETHERNET):
+            print device.speed
+            print device.carrier
+            print device.hwaddress
+            
+    for conn in nm.list_connections():
+        print conn.get_settings()['connection']['id']
+        print conn.get_settings()['connection']['type']
+
 
 #	print "=========="
 #	con = NetworkManagerConnection(bus, set.list_connections()[0])
