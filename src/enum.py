@@ -28,9 +28,9 @@ class Enum(object):
 	
 
 def new(name, **values):
-	X = type(name, (Enum, object, ), dict(_values={},_names={}))
-	for k in values.keys():
-		setattr(X, k, X(k, values[k]))
-	return X
+	ENUM = type(name, (Enum, object, ), dict(_values={},_names={}))
+	for (name, value) in values.iteritems():
+		setattr(ENUM, name, ENUM(name, value))
+	return ENUM
 
 
