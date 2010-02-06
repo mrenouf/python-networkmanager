@@ -192,7 +192,6 @@ class NetworkManagerDevice(object):
 class NetworkManagerDeviceWired(NetworkManagerDevice):
 	def __init__(self, bus, object_path):
 		NetworkManagerDevice.__init__(self, bus, object_path)
-		self.proxy = bus.get_object(NM_NAME, object_path)
 
 	@property	
 	def hwaddress(self):
@@ -206,7 +205,10 @@ class NetworkManagerDeviceWired(NetworkManagerDevice):
 	def carrier(self):
 		return self.proxy.Get(NM_DEVICE_WIRED_IFACE, 'Carrier')
 
-#class NetworkManagerDeviceWireless(NetworkManagerDevice):
+class NetworkManagerDeviceWireless(NetworkManagerDevice):
+	def __init__(self, bus, object_path):
+		NetworkManagerDevice.__init__(self, bus, object_path)
+    
     
 #class NetworkManagerAccessPoint
     
