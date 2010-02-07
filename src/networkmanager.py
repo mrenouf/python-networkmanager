@@ -14,7 +14,9 @@ NM_DEVICE_IFACE="org.freedesktop.NetworkManager.Device"
 NM_DEVICE_WIRED_IFACE="org.freedesktop.NetworkManager.Device.Wired"
 NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
 NM_SETTINGS_IFACE="org.freedesktop.NetworkManagerSettings"
+NM_SETTINGS_CONNECTION_IFACE="org.freedesktop.NetworkManagerSettings.Connection"
 NM_DEVICE_WIRELESS_IFACE="org.freedesktop.NetworkManager.Device.Wireless"
+NM_CONN_ACTIVE="org.freedesktop.NetworkManager.Connection.Active"
 
 DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
 
@@ -38,15 +40,34 @@ DeviceState = enum.new("DeviceState",
     #The device is active.
     ACTIVATED = 8,
     #The device is in a failure state following an attempt to activate it.
-    FAILED = 9
+    FAILED = 9,
 )
 
+ActiveConnectionState = enum.new("ActiveConnectionState",
+    #The active connection is in an unknown state.
+    UNKNOWN = 0,
+    #The connection is activating.
+    ACTIVATING = 1,
+    #The connection is activated.
+    ACTIVATED = 2,
+)
 DeviceCap = enum.new("DeviceCap", 
     NONE = 0,
     SUPPORTED = 1,
     CARRIER_DETECT = 2,
 )
 
+# NM_802_11_MODE
+WifiMode = enum.new("WifiMode",
+    #Mode is unknown.
+    UNKNOWN = 0,
+    #Uncoordinated network without central infrastructure.
+    ADHOC = 1,
+    #Coordinated network with one or more central controllers.
+    INFRA = 2,
+)
+
+# NM_DEVICE_STATE_REASON
 DeviceStateReason = enum.new("DeviceStateReason", 
     #The reason for the device state change is unknown.
     UNKNOWN = 0,
@@ -136,13 +157,13 @@ DeviceStateReason = enum.new("DeviceStateReason",
     SUPPLICANT_AVAILABLE = 42,
 )
 
-class NetworkManagerDevice(object):
+class NetworkManagerDevice(object):        
     def __init__(self, bus, object_path):
         self.proxy = bus.get_object(NM_NAME, object_path)
     
-    def getattr__(self, name):
-        return self.proxy.Get(NM_DEVICE_IFACE, name)
-
+    def __repr__(self):
+        return "<Device: %s (%s)>" % (self.interface, self.type)
+        
     def disconnect(self):
         self.proxy.Disconnect()
 
@@ -171,7 +192,7 @@ class NetworkManagerDevice(object):
         return DeviceState.from_value(self.proxy.Get(NM_DEVICE_IFACE, "State"))
 
     @property
-    def ipv4config(self):
+    def ip4config(self):
         return self.proxy.Get(NM_DEVICE_IFACE, "Ip4Config")
 
     @property
@@ -211,27 +232,94 @@ class NetworkManagerDeviceWireless(NetworkManagerDevice):
         NetworkManagerDevice.__init__(self, bus, object_path)
 
     @property
-    def accesspoints(self):
+    def access_points(self):
         return self.proxy.GetAccessPoints(dbus_interface=NM_DEVICE_WIRELESS_IFACE)
     
-#class NetworkManagerAccessPoint
+    @property
+    def hwaddress(self):
+        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "HwAddress")
+        
+    @property
+    def mode(self):
+        return WifiMode.from_value(self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "Mode"))
+
+    @property    
+    def bitrate(self):
+        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "Bitrate")
+
+    @property    
+    def active_access_point(self):
+        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "ActiveAccessPoint")
+
+    @property    
+    def wireless_capabilities(self):
+        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "WirelessCapabilities")
     
+    
+
+def device(bus, path):
+    """
+    Returns an instance of NetworkManagerDevice or one of it's 
+    subtypes depending on the type of device the path refers to
+    """
+    types = {DeviceType.UNKNOWN: NetworkManagerDevice,
+            DeviceType.ETHERNET: NetworkManagerDeviceWired,
+            DeviceType.WIFI: NetworkManagerDeviceWireless,
+            DeviceType.GSM: NetworkManagerDevice,
+            DeviceType.CDMA: NetworkManagerDevice,}
+    device = bus.get_object(NM_NAME, path)
+    type = DeviceType.from_value(device.Get(NM_DEVICE_IFACE, 'DeviceType'))
+    return types[type](bus, path)
+
+class NetworkManagerAccessPoint(object):
+    def __init__(self, bus, object_path):
+        self.proxy = bus.get_object(NM_NAME, object_path)
+
+    @property
+    def flags(self):    
+        pass
+    
+    @property
+    def wpaflags(self):
+        pass
+        
+    @property
+    def rsnflags(self):
+        pass
+        
+    @property
+    def ssid(self):
+        pass
+        
+    @property
+    def frequency(self):
+        pass
+        
+    @property
+    def hwaddress(self):
+        pass
+        
+    @property
+    def mode(self):
+        pass
+    
+    @property
+    def maxbitrate(self):
+        pass
+        
+    @property
+    def strength(self):
+        pass
+
 
 class NetworkManager(object):
     # Map of subclasses to return for different device types
-    device_types = {
-        DeviceType.UNKNOWN: NetworkManagerDevice,
-        DeviceType.ETHERNET: NetworkManagerDeviceWired,
-        DeviceType.WIFI: NetworkManagerDeviceWireless,
-        DeviceType.GSM: NetworkManagerDevice,
-        DeviceType.CDMA: NetworkManagerDevice,
-    }
     
     def __init__(self):
         self.bus = dbus.SystemBus()
         self.proxy = self.bus.get_object(NM_NAME, NM_PATH)
         self.settings = self.bus.get_object(NM_NAME, NM_SETTINGS_PATH)
-
+    
     def __repr__(self):
         return "<NetworkManager>"
     
@@ -239,49 +327,85 @@ class NetworkManager(object):
         """
         Returns a list of object paths of network devices known to the system
         """
-        devices = []
-        for device_path in self.proxy.GetDevices():
-            device = self.bus.get_object(NM_NAME, device_path)
-            device_type = DeviceType.from_value(device.Get(NM_DEVICE_IFACE, 'DeviceType'))
-            devices.append(NetworkManager.device_types[device_type](self.bus, device_path))
-        return devices
+        return [device(self.bus, path) for path in self.proxy.GetDevices()]
 
     def sleep(self, sleep):
         pass
     
-    def list_connections(self):
-        return [NetworkManagerConnection(self.bus, path) for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_IFACE)]
-        
+    @property
+    def connections(self):
+        return 
+            [NetworkManagerConnection(self.bus, path) 
+            for path 
+            in self.settings.ListConnections(dbus_interface=NM_SETTINGS_IFACE)]
+
+    @property    
+    def active_connections(self):
+        return 
+            [ActiveConnection(self.bus, path) 
+            for path 
+            in self.proxy.Get(NM_SETTINGS_CONNECTION_IFACE, "ActiveConnections")]
+
     def add_connection(self, properties):
         self.settings.AddConnection(properties, dbus_interface=NM_SETTINGS_IFACE)
+
         
-    def get_connection(self, path):
-        return NetworkManagerConnection(self.bus, path)
+class ActiveConnection():
+    def __init__(self, bus, path):
+        self.bus = bus
+        self.proxy = bus.get_object(NM_NAME, path)
+
+    def __repr__(self):
+        return "<ActiveConnection: %s>" % self.connection.settings['connection']['id']
         
-    def get_settings(self):
-        """
-        Returns a wrapper providing access to NetorkManagerSettings 
-        for accessing system connection settings
-        """
-        return self.settings
+    @property
+    def service_name(self):
+        return self.proxy.Get(NM_CONN_ACTIVE, "ServiceName")
+
+    @property
+    def connection(self):
+        path = self.proxy.Get(NM_CONN_ACTIVE, "Connection")
+        return NetworkManagerConnection(self.bus, path)        
+
+    @property
+    def specific_object(self):
+        return self.proxy.Get(NM_CONN_ACTIVE, "SpecificObject")
+
+    @property
+    def devices(self):
+        return [device(self.bus, path) for path in self.proxy.Get(NM_CONN_ACTIVE, "Devices")]
+
+    @property
+    def state(self):
+        return ActiveConnectionState.from_value(
+            self.proxy.Get(NM_CONN_ACTIVE, "State"))
+
+    @property
+    def default(self):
+        return self.proxy.Get(NM_CONN_ACTIVE, "Default")
+
+    @property
+    def vpn(self):
+        return self.proxy.Get(NM_CONN_ACTIVE, "Vpn")
     
 class NetworkManagerConnection():
-    def __init__(self, bus, connection):
-        self.proxy = bus.get_object(NM_NAME, connection);
+    def __init__(self, bus, path):
+        self.proxy = bus.get_object(NM_NAME, path);
     
     def __repr__(self):
-        return "<NetworkManagerConnection: %s>" % self.get_settings()
+        return "<NetworkManagerConnection: %s>" % self.settings['connection']['id']
     
-    def get_settings(self):
+    @property
+    def settings(self):
         """
         Returns this connections settings - a{sa{sv}} (String_String_Variant_Map_Map)
         The nested settings maps describing this object.
         """
-        return self.proxy.GetSettings(dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
+        return self.proxy.GetSettings(dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
 
     def update(self, properties):
-        self.proxy.Update(properties, dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
+        self.proxy.Update(properties, dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
         
     def delete(self):
-        self.proxy.Delete(dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
+        self.proxy.Delete(dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
 
