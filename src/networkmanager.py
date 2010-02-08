@@ -1,22 +1,29 @@
 #!/usr/bin/python
 
+# Depends: python-iplib
+
 import glib
 import gtk
 import dbus
 import enum
+import socket
+import iplib
+
+from binascii import unhexlify
 
 ETH="802-3-ethernet"
 
 NM_NAME="org.freedesktop.NetworkManager"
 NM_PATH="/org/freedesktop/NetworkManager"
-NM_IFACE="org.freedesktop.NetworkManager"
-NM_DEVICE_IFACE="org.freedesktop.NetworkManager.Device"
-NM_DEVICE_WIRED_IFACE="org.freedesktop.NetworkManager.Device.Wired"
-NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
-NM_SETTINGS_IFACE="org.freedesktop.NetworkManagerSettings"
-NM_SETTINGS_CONNECTION_IFACE="org.freedesktop.NetworkManagerSettings.Connection"
-NM_DEVICE_WIRELESS_IFACE="org.freedesktop.NetworkManager.Device.Wireless"
+
+NM_DEVICE="org.freedesktop.NetworkManager.Device"
+NM_DEVICE_WIRED="org.freedesktop.NetworkManager.Device.Wired"
+NM_DEVICE_WIRELESS="org.freedesktop.NetworkManager.Device.Wireless"
 NM_CONN_ACTIVE="org.freedesktop.NetworkManager.Connection.Active"
+
+NM_SETTINGS_NAME="org.freedesktop.NetworkManagerSettings"
+NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
+NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
 DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
 
@@ -51,6 +58,7 @@ ActiveConnectionState = enum.new("ActiveConnectionState",
     #The connection is activated.
     ACTIVATED = 2,
 )
+
 DeviceCap = enum.new("DeviceCap", 
     NONE = 0,
     SUPPORTED = 1,
@@ -157,123 +165,124 @@ DeviceStateReason = enum.new("DeviceStateReason",
     SUPPLICANT_AVAILABLE = 42,
 )
 
-class NetworkManagerDevice(object):        
+class Device(object):
+    def __new__(cls, bus, path):
+        _subclasses = { 
+            DeviceType.ETHERNET: DeviceWired,
+            DeviceType.WIFI: DeviceWireless,
+        }
+                
+        device = bus.get_object(NM_NAME, path)        
+        type = DeviceType.from_value(device.Get(NM_DEVICE, 'DeviceType'))
+        try:
+            cls = _subclasses[type]
+        except KeyError:
+            cls = Device
+        
+        return object.__new__(cls)
+    
     def __init__(self, bus, object_path):
         self.proxy = bus.get_object(NM_NAME, object_path)
     
     def __repr__(self):
-        return "<Device: %s (%s)>" % (self.interface, self.type)
+        return "<Device: %s [%s]>" % (self.interface, self.hwaddress)
         
     def disconnect(self):
         self.proxy.Disconnect()
 
     @property
     def udi(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Udi")
+        return self.proxy.Get(NM_DEVICE, "Udi")
 
     @property
     def interface(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Interface")
+        return self.proxy.Get(NM_DEVICE, "Interface")
 
     @property
     def driver(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Driver")
+        return self.proxy.Get(NM_DEVICE, "Driver")
 
     @property
     def capabilities(self):
-        return DeviceCap.from_value(self.proxy.Get(NM_DEVICE_IFACE, "Capabilities"))
+        return DeviceCap.from_value(self.proxy.Get(NM_DEVICE, "Capabilities"))
 
     @property
     def ipv4_address(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Ip4Address")
+        return self.proxy.Get(NM_DEVICE, "Ip4Address")
 
     @property
     def state(self):
-        return DeviceState.from_value(self.proxy.Get(NM_DEVICE_IFACE, "State"))
+        return DeviceState.from_value(self.proxy.Get(NM_DEVICE, "State"))
 
     @property
     def ip4config(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Ip4Config")
+        return self.proxy.Get(NM_DEVICE, "Ip4Config")
 
     @property
     def dhcp4config(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Dhcp4Config")
+        return self.proxy.Get(NM_DEVICE, "Dhcp4Config")
 
     @property
     def ip6config(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Ip6Config")
+        return self.proxy.Get(NM_DEVICE, "Ip6Config")
 
     @property
     def managed(self):
-        return self.proxy.Get(NM_DEVICE_IFACE, "Managed")
+        return self.proxy.Get(NM_DEVICE, "Managed")
 
     @property
     def type(self):
-        return DeviceType.from_value(self.proxy.Get(NM_DEVICE_IFACE, "DeviceType"))
+        return DeviceType.from_value(self.proxy.Get(NM_DEVICE, "DeviceType"))
 
-class NetworkManagerDeviceWired(NetworkManagerDevice):
+class DeviceWired(Device):
     def __init__(self, bus, object_path):
-        NetworkManagerDevice.__init__(self, bus, object_path)
+        Device.__init__(self, bus, object_path)
 
     @property    
     def hwaddress(self):
-        return self.proxy.Get(NM_DEVICE_WIRED_IFACE, 'HwAddress')
+        return self.proxy.Get(NM_DEVICE_WIRED, 'HwAddress')
 
     @property    
     def speed(self):
-        return self.proxy.Get(NM_DEVICE_WIRED_IFACE, 'Speed')
+        return self.proxy.Get(NM_DEVICE_WIRED, 'Speed')
 
     @property    
     def carrier(self):
-        return self.proxy.Get(NM_DEVICE_WIRED_IFACE, 'Carrier')
+        return self.proxy.Get(NM_DEVICE_WIRED, 'Carrier')
 
-class NetworkManagerDeviceWireless(NetworkManagerDevice):
+
+class DeviceWireless(Device):
     def __init__(self, bus, object_path):
-        NetworkManagerDevice.__init__(self, bus, object_path)
+        Device.__init__(self, bus, object_path)
 
     @property
     def access_points(self):
-        return self.proxy.GetAccessPoints(dbus_interface=NM_DEVICE_WIRELESS_IFACE)
+        return [AccessPoint(self.bus, path) 
+        for path in self.proxy.GetAccessPoints(dbus_interface=NM_DEVICE_WIRELESS)]
     
     @property
     def hwaddress(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "HwAddress")
+        return self.proxy.Get(NM_DEVICE_WIRELESS, "HwAddress")
         
     @property
     def mode(self):
-        return WifiMode.from_value(self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "Mode"))
+        return WifiMode.from_value(self.proxy.Get(NM_DEVICE_WIRELESS, "Mode"))
 
     @property    
     def bitrate(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "Bitrate")
+        return self.proxy.Get(NM_DEVICE_WIRELESS, "Bitrate")
 
     @property    
     def active_access_point(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "ActiveAccessPoint")
+        return self.proxy.Get(NM_DEVICE_WIRELESS, "ActiveAccessPoint")
 
     @property    
     def wireless_capabilities(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS_IFACE, "WirelessCapabilities")
-    
-    
+        return self.proxy.Get(NM_DEVICE_WIRELESS, "WirelessCapabilities")
 
-def device(bus, path):
-    """
-    Returns an instance of NetworkManagerDevice or one of it's 
-    subtypes depending on the type of device the path refers to
-    """
-    types = {DeviceType.UNKNOWN: NetworkManagerDevice,
-            DeviceType.ETHERNET: NetworkManagerDeviceWired,
-            DeviceType.WIFI: NetworkManagerDeviceWireless,
-            DeviceType.GSM: NetworkManagerDevice,
-            DeviceType.CDMA: NetworkManagerDevice,}
-    device = bus.get_object(NM_NAME, path)
-    type = DeviceType.from_value(device.Get(NM_DEVICE_IFACE, 'DeviceType'))
-    return types[type](bus, path)
-
-class NetworkManagerAccessPoint(object):
-    def __init__(self, bus, object_path):
-        self.proxy = bus.get_object(NM_NAME, object_path)
+class AccessPoint(object):
+    def __init__(self, bus, path):
+        self.proxy = bus.get_object(NM_NAME, path)
 
     @property
     def flags(self):    
@@ -327,27 +336,23 @@ class NetworkManager(object):
         """
         Returns a list of object paths of network devices known to the system
         """
-        return [device(self.bus, path) for path in self.proxy.GetDevices()]
+        return [Device(self.bus, path) for path in self.proxy.GetDevices()]
 
     def sleep(self, sleep):
         pass
     
     @property
     def connections(self):
-        return 
-            [NetworkManagerConnection(self.bus, path) 
-            for path 
-            in self.settings.ListConnections(dbus_interface=NM_SETTINGS_IFACE)]
+        return [Connection(self.bus, path) 
+        for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME)]
 
     @property    
     def active_connections(self):
-        return 
-            [ActiveConnection(self.bus, path) 
-            for path 
-            in self.proxy.Get(NM_SETTINGS_CONNECTION_IFACE, "ActiveConnections")]
+        return [ActiveConnection(self.bus, path) 
+        for path in self.proxy.Get(NM_SETTINGS_CONNECTION, "ActiveConnections")]
 
     def add_connection(self, properties):
-        self.settings.AddConnection(properties, dbus_interface=NM_SETTINGS_IFACE)
+        self.settings.AddConnection(properties, dbus_interface=NM_SETTINGS_NAME)
 
         
 class ActiveConnection():
@@ -365,7 +370,7 @@ class ActiveConnection():
     @property
     def connection(self):
         path = self.proxy.Get(NM_CONN_ACTIVE, "Connection")
-        return NetworkManagerConnection(self.bus, path)        
+        return Connection(self.bus, path)        
 
     @property
     def specific_object(self):
@@ -373,7 +378,7 @@ class ActiveConnection():
 
     @property
     def devices(self):
-        return [device(self.bus, path) for path in self.proxy.Get(NM_CONN_ACTIVE, "Devices")]
+        return [Device(self.bus, path) for path in self.proxy.Get(NM_CONN_ACTIVE, "Devices")]
 
     @property
     def state(self):
@@ -388,12 +393,12 @@ class ActiveConnection():
     def vpn(self):
         return self.proxy.Get(NM_CONN_ACTIVE, "Vpn")
     
-class NetworkManagerConnection():
+class Connection():
     def __init__(self, bus, path):
         self.proxy = bus.get_object(NM_NAME, path);
     
     def __repr__(self):
-        return "<NetworkManagerConnection: %s>" % self.settings['connection']['id']
+        return "<Connection: \"%s\">" % self.settings.id
     
     @property
     def settings(self):
@@ -401,11 +406,141 @@ class NetworkManagerConnection():
         Returns this connections settings - a{sa{sv}} (String_String_Variant_Map_Map)
         The nested settings maps describing this object.
         """
-        return self.proxy.GetSettings(dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
+        return Settings(self.proxy.GetSettings(dbus_interface=NM_SETTINGS_CONNECTION))
 
     def update(self, properties):
-        self.proxy.Update(properties, dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
+        self.proxy.Update(properties, dbus_interface=NM_SETTINGS_CONNECTION)
         
     def delete(self):
-        self.proxy.Delete(dbus_interface=NM_SETTINGS_CONNECTION_IFACE)
+        self.proxy.Delete(dbus_interface=NM_SETTINGS_CONNECTION)
+
+
+class UnsupportedConnectionType(Exception):
+    """ Encountered an unknown value within connection->type """
+
+_default_settings = {
+    'connection': {
+        'type': '802-3-ethernet', 
+    }, 
+    '802-3-ethernet': {
+        'duplex':'full',
+    },
+    'ipv4': {
+        'routes': [],
+        'addresses': [],
+        'dns': [],
+        'method': 'manual',
+    },
+    'ipv6': {
+        'routes': [],
+        'addresses': [],
+        'dns': [],
+        'method': 'ignore',
+    }
+}
+
+def Settings(settings):        
+    try:
+        conn_type = settings['connection']['type']
+    except KeyError:
+        raise UnsupportedConnectionType("settings: connection.type is missing")
+    
+    if conn_type == "802-3-ethernet":
+        return WiredSettings(settings)
+    elif conn_type == "802-11-wireless":
+        return WirelessSettings(settings)
+    else:
+        raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)    
+
+class BaseSettings(object):
+    def __init__(self, settings):
+        self.settings = settings
+        self.conn_type = settings['connection']['type']
+
+    def __repr__(self):
+        return "<Settings>"    
+
+    @property
+    def id(self):
+        return self.settings['connection']['id']
+
+    @id.setter
+    def id(self, value):
+        self.settings['connection']['id'] = value
+    
+    @property
+    def type(self):
+        return self.settings['connection']['type']
+
+    @property
+    def mac_address(self):
+        eth = self.settings[self.conn_type]
+        # there may not be a mac specified
+        if not eth.has_key('mac-address'): return None
+        address = self.settings[self.conn_type]['mac-address']
+        return ":".join([("%02X" % int(value)) for value in address])
+
+    @mac_address.setter
+    def mac_address(self, address):
+        bytes = [unhexlify(v) for v in address.split(":")]
+        self.settings[self.conn_type]['mac-address'] = dbus.Array(bytes)
+
+    @property
+    def auto(self):
+        """ Return True if addresses are auto-assigned for this connection """
+        return self.settings['ipv4']['method'] == 'auto'
+            
+    def set_auto(self):
+        """ Configure this connection for automatic address assignment """
+        self.settings['ipv4'] = {
+            'routes': [],
+            'addresses': [],
+            'dns': [],
+            'method': 'auto',}
+
+    @property
+    def address(self):
+        addresses = self.settings['ipv4']['addresses']
+        if len(addresses) == 0:
+            return None
+            
+        # NOTE: only reports first address!
+            
+        address = addresses[0]
+        return "%s/%d -> %s" % (
+            str(ipaddr.IP4Address(address[0], version=4)), 
+            int(address[1]), 
+            str(ipaddr.IPAddress(address[2], version=4)))
+        
+
+    @address.setter
+    def address(self, address, gateway):
+        """
+        Assigns the 
+        """
+        self.settings['ipv4']['method'] = 'manual'
+        ip = ipaddr.IPAddress(address, version=4)
+        gw = ipaddr.IPAddress(gateway, version=4)
+        addr = self.settings['ipv4']['addresses'] = [
+            [int(ip), ip.prefixlen, int(gw)]
+        ]
+        
+    def set_device(self, device):
+        self.mac_address = device.hwaddress        
+
+class WirelessSettings(BaseSettings):
+    def __repr__(self):
+        return "<WirelessSettings (%s)>" % ("DHCP" if self.auto else "Static")
+
+class WiredSettings(BaseSettings):        
+    def __repr__(self):
+        return "<WiredSettings (%s)>" % ("DHCP" if self.auto else "Static")
+        
+    @property        
+    def duplex(self):
+        return self.settings['802-3-ethernet']['duplex']
+
+    @duplex.setter
+    def duplex(self, value):
+        self.settings['802-3-ethernet']['duplex'] = value
 
