@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
-# Depends: python-iplib
-
 import glib
 import gtk
 import dbus
 import enum
 import socket
-import iplib
 
 from binascii import unhexlify
 
