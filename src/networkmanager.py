@@ -351,7 +351,6 @@ class NetworkManager(object):
 
     def add_connection(self, properties):
         self.settings.AddConnection(properties, dbus_interface=NM_SETTINGS_NAME)
-
         
 class ActiveConnection():
     def __init__(self, bus, path):
@@ -451,6 +450,9 @@ def Settings(settings):
         raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)    
 
 class BaseSettings(object):
+
+    _ALL_ONES = all_ones = (2**32) - 1
+
     def __init__(self, settings):
         self.settings = settings
         self.conn_type = settings['connection']['type']
@@ -458,8 +460,37 @@ class BaseSettings(object):
     def __repr__(self):
         return "<Settings>"    
 
+
+    def _has_address(self):
+        """
+        Internal function
+
+        Returns True if there is at least one address assigned
+        within this connection. No adddresses usually indicates
+        autoconfiguration
+        """
+        return len(self.settings['ipv4']['addresses']) > 0
+
+    def _get_first_address(self):
+        """
+        Internal function
+        
+        Returns the first 'address' defined which is actually 
+        an (address, maskbits, gateway) triplet within an array.
+        
+        If an address is not defined, one is created, assigned and returned.
+        
+        Note: Does not support multiple addresses on a single connection.
+        """
+        addresses = self.settings['ipv4']['addresses']
+        if len(addresses) == 0:
+            addresses = [ [0, 0, 0] ]
+            self.settings['ipv4']['addresses'] = addresses
+        return addresses[0] # NOTE: only reports from first address!          
+
     @property
     def id(self):
+        """ The 'id' or name of the connection """
         return self.settings['connection']['id']
 
     @id.setter
@@ -468,28 +499,32 @@ class BaseSettings(object):
     
     @property
     def type(self):
+        """ The connection type (usually indicates media standard) """
         return self.settings['connection']['type']
 
     @property
     def mac_address(self):
+        """ The mac address of the connection if only a specific adapter should be used """
         eth = self.settings[self.conn_type]
-        # there may not be a mac specified
         if not eth.has_key('mac-address'): return None
         address = self.settings[self.conn_type]['mac-address']
         return ":".join([("%02X" % int(value)) for value in address])
 
     @mac_address.setter
     def mac_address(self, address):
-        bytes = [unhexlify(v) for v in address.split(":")]
-        self.settings[self.conn_type]['mac-address'] = dbus.Array(bytes)
+        if address is None:
+            del self.settings[self.conn_type]['mac-address']
+        else:
+            bytes = [unhexlify(v) for v in address.split(":")]
+            self.settings[self.conn_type]['mac-address'] = bytes
 
     @property
     def auto(self):
-        """ Return True if addresses are auto-assigned for this connection """
+        """ Return True if this connection uses network autoconfiguration """
         return self.settings['ipv4']['method'] == 'auto'
             
     def set_auto(self):
-        """ Configure this connection for automatic address assignment """
+        """ Configure this connection for network autoconfiguration """
         self.settings['ipv4'] = {
             'routes': [],
             'addresses': [],
@@ -498,33 +533,101 @@ class BaseSettings(object):
 
     @property
     def address(self):
-        addresses = self.settings['ipv4']['addresses']
-        if len(addresses) == 0:
+        """
+        Returns the IPv4 address assigned to this connection in
+        dotted-quad notation, or None if the connection has no
+        statically assigned address information.
+        """
+        if not self._has_address():
+            return None
+    
+        entry = self._get_first_address()
+        return str(ipaddr.IPAddress(socket.ntohl(entry[0]), version=4))
+        
+    @address.setter
+    def address(self, address):
+        """
+        Assigns an address to this connection. This also implicitly sets
+        the mode to manual (disables network autoconfiguration).
+        """
+        entry = self._get_first_address()
+        entry[0] = socket.htonl(int(ipaddr.IPAddress(entry[0], version=4)))
+        self.settings['ipv4']['method'] = 'manual'
+
+    @property
+    def netmask(self):
+        """
+        Returns the network mask of the connection in dotted quad
+        notation, or None if the connection has no statically assigned 
+        address information.
+        """
+        if not self._has_address():
             return None
             
-        # NOTE: only reports first address!
-            
-        address = addresses[0]
-        return "%s/%d -> %s" % (
-            str(ipaddr.IPAddress(address[0], version=4)), 
-            int(address[1]), 
-            str(ipaddr.IPAddress(address[2], version=4)))
-        
+        entry = self._get_first_address()
+        prefixlen = int(entry[1])
+        netmask_int = self._ALL_ONES ^ (self._ALL_ONES >> prefixlen)
+        return str(ipaddr.IPAddress(netmask_int))
+    
+    @netmask.setter
+    def netmask(self, netmask):
+        """
+        Assigns the network mask for thisconnection. This also implicitly
+        sets the mode to manual (disables network autoconfiguration).
+        """
+        mask=32
+        ip_int = int(ipaddr.IPAddress(netmask))
+        while mask:
+            if ip_int & 1 == 1:
+                break
+            ip_int >>= 1
+            mask -= 1
 
-    @address.setter
-    def address(self, address, gateway):
-        """
-        Assigns the 
-        """
+        return mask
+
+        entry = self._get_first_address()
+        entry[1] = mask
         self.settings['ipv4']['method'] = 'manual'
-        ip = ipaddr.IPAddress(address, version=4)
-        gw = ipaddr.IPAddress(gateway, version=4)
-        addr = self.settings['ipv4']['addresses'] = [
-            [int(ip), ip.prefixlen, int(gw)]
-        ]
         
-    def set_device(self, device):
-        self.mac_address = device.hwaddress        
+    @property
+    def gateway(self):
+        """
+        Returns the IPv4 gateway assigned to this connection in
+        dotted-quad notation, or None if the connection has no
+        statically assigned address information.
+        """
+        if not self._has_address():
+            return None
+
+        entry = self._get_first_address()
+        return str(ipaddr.IPAddress(socket.ntohl(entry[2]), version=4))
+        
+    @gateway.setter
+    def gateway(self, gateway):
+        """
+        Assigns a gateway to this connection. This also implicitly sets
+        the mode to manual (disables network autoconfiguration).
+        """
+        entry =self._get_first_address()
+        entry[2] = socket.htonl(int(ipaddr.IPAddress(gateway, version=4)))
+        self.settings['ipv4']['method'] = 'manual'
+
+    @property
+    def dns(self):
+        """
+        The assigned DNS server if the connection is manually configured
+        or autoconfiguration should be forced to use a specific DNS server.
+        
+        Only accesses the first DNS address defined
+        """
+        if len(self.settings['ipv4']['dns']) == 0:
+            return None
+        else:
+            return str(ipaddr.IPAddress(socket.ntohl(self.settings['ipv4']['dns'][0])))
+
+    @dns.setter
+    def dns(self, address):                
+        self.settings['ipv4']['dns'] = [socket.htonl(int(ipaddr.IPAddress(address)))]
 
 class WirelessSettings(BaseSettings):
     def __repr__(self):
