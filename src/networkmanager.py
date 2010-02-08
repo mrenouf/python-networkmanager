@@ -5,6 +5,7 @@ import gtk
 import dbus
 import enum
 import socket
+import ipaddr
 
 from binascii import unhexlify
 
@@ -505,7 +506,7 @@ class BaseSettings(object):
             
         address = addresses[0]
         return "%s/%d -> %s" % (
-            str(ipaddr.IP4Address(address[0], version=4)), 
+            str(ipaddr.IPAddress(address[0], version=4)), 
             int(address[1]), 
             str(ipaddr.IPAddress(address[2], version=4)))
         
