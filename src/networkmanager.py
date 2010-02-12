@@ -5,6 +5,7 @@ import gtk
 import dbus
 import enum
 import socket
+import uuid
 import ipaddr
 
 from binascii import unhexlify
@@ -330,14 +331,15 @@ class NetworkManager(object):
     def __repr__(self):
         return "<NetworkManager>"
     
-    def get_devices(self):
+    def sleep(self, sleep):
+        pass
+
+    @property
+    def devices(self):
         """
         Returns a list of object paths of network devices known to the system
         """
         return [Device(self.bus, path) for path in self.proxy.GetDevices()]
-
-    def sleep(self, sleep):
-        pass
     
     @property
     def connections(self):
@@ -349,8 +351,9 @@ class NetworkManager(object):
         return [ActiveConnection(self.bus, path) 
         for path in self.proxy.Get(NM_SETTINGS_CONNECTION, "ActiveConnections")]
 
-    def add_connection(self, properties):
-        self.settings.AddConnection(properties, dbus_interface=NM_SETTINGS_NAME)
+    def add_connection(self, settings):
+        print settings._settings
+        self.settings.AddConnection(settings._settings, dbus_interface=NM_SETTINGS_NAME)
         
 class ActiveConnection():
     def __init__(self, bus, path):
@@ -358,7 +361,7 @@ class ActiveConnection():
         self.proxy = bus.get_object(NM_NAME, path)
 
     def __repr__(self):
-        return "<ActiveConnection: %s>" % self.connection.settings['connection']['id']
+        return "<ActiveConnection: %s>" % self.connection.settings.id
         
     @property
     def service_name(self):
@@ -405,36 +408,60 @@ class Connection():
         """
         return Settings(self.proxy.GetSettings(dbus_interface=NM_SETTINGS_CONNECTION))
 
-    def update(self, properties):
-        self.proxy.Update(properties, dbus_interface=NM_SETTINGS_CONNECTION)
+    def update(self, settings):
+        """
+        Update the connection to reflect the current values within the specified
+        settings object (must be a subclass of Settings
+        """
+        self.proxy.Update(settings._settings, dbus_interface=NM_SETTINGS_CONNECTION)
         
     def delete(self):
+        """ Removes this connection """
         self.proxy.Delete(dbus_interface=NM_SETTINGS_CONNECTION)
 
 
 class UnsupportedConnectionType(Exception):
     """ Encountered an unknown value within connection->type """
 
-_default_settings = {
-    'connection': {
+_default_settings_wired = dbus.Dictionary({
+    'connection': dbus.Dictionary({
         'type': '802-3-ethernet', 
-    }, 
-    '802-3-ethernet': {
+    }), 
+    '802-3-ethernet': dbus.Dictionary({
         'duplex':'full',
-    },
-    'ipv4': {
-        'routes': [],
-        'addresses': [],
-        'dns': [],
-        'method': 'manual',
-    },
-    'ipv6': {
-        'routes': [],
-        'addresses': [],
-        'dns': [],
+    }),
+    'ipv4': dbus.Dictionary({
+        'routes': dbus.Array([], signature='au'),
+        'addresses': dbus.Array([], signature='au'),
+        'dns': dbus.Array([],signature='u'),
+        'method': 'auto',
+    }),
+    'ipv6': dbus.Dictionary({
+        'routes': dbus.Array([], signature='(ayuayu)'),
+        'addresses': dbus.Array([], signature='(ayu)'),
+        'dns': dbus.Array([],signature='ay'),
         'method': 'ignore',
-    }
-}
+    })
+})
+
+_default_settings_wireless = dbus.Dictionary({
+    'connection': dbus.Dictionary({
+        'type': '802-11-wireless', 
+    }), 
+    '802-11-wireless': dbus.Dictionary({}),
+    'ipv4': dbus.Dictionary({
+        'routes': dbus.Array([], signature='au'),
+        'addresses': dbus.Array([], signature='au'),
+        'dns': dbus.Array([],signature='u'),
+        'method': 'auto',
+    }),
+    'ipv6': dbus.Dictionary({
+        'routes': dbus.Array([], signature='(ayuayu)'),
+        'addresses': dbus.Array([], signature='(ayu)'),
+        'dns': dbus.Array([],signature='ay'),
+        'method': 'ignore',
+    })
+})
 
 def Settings(settings):        
     try:
@@ -454,9 +481,10 @@ class BaseSettings(object):
     _ALL_ONES = all_ones = (2**32) - 1
 
     def __init__(self, settings):
-        self.settings = settings
+        self._settings = settings
         self.conn_type = settings['connection']['type']
-
+        self._settings['connection']['uuid'] = str(uuid.uuid4())
+        
     def __repr__(self):
         return "<Settings>"    
 
@@ -469,7 +497,7 @@ class BaseSettings(object):
         within this connection. No adddresses usually indicates
         autoconfiguration
         """
-        return len(self.settings['ipv4']['addresses']) > 0
+        return len(self._settings['ipv4']['addresses']) > 0
 
     def _get_first_address(self):
         """
@@ -482,53 +510,53 @@ class BaseSettings(object):
         
         Note: Does not support multiple addresses on a single connection.
         """
-        addresses = self.settings['ipv4']['addresses']
+        addresses = self._settings['ipv4']['addresses']
         if len(addresses) == 0:
-            addresses = [ [0, 0, 0] ]
-            self.settings['ipv4']['addresses'] = addresses
+            addresses = dbus.Array([dbus.Array([dbus.UInt32(0), dbus.UInt32(0), dbus.UInt32(0)], signature='u')], signature='au')
+            self._settings['ipv4']['addresses'] = addresses
         return addresses[0] # NOTE: only reports from first address!          
 
     @property
     def id(self):
         """ The 'id' or name of the connection """
-        return self.settings['connection']['id']
+        return self._settings['connection']['id']
 
     @id.setter
     def id(self, value):
-        self.settings['connection']['id'] = value
+        self._settings['connection']['id'] = value
     
     @property
     def type(self):
         """ The connection type (usually indicates media standard) """
-        return self.settings['connection']['type']
+        return self._settings['connection']['type']
 
     @property
     def mac_address(self):
         """ The mac address of the connection if only a specific adapter should be used """
-        eth = self.settings[self.conn_type]
+        eth = self._settings[self.conn_type]
         if not eth.has_key('mac-address'): return None
-        address = self.settings[self.conn_type]['mac-address']
+        address = self._settings[self.conn_type]['mac-address']
         return ":".join([("%02X" % int(value)) for value in address])
 
     @mac_address.setter
     def mac_address(self, address):
         if address is None:
-            del self.settings[self.conn_type]['mac-address']
+            del self._settings[self.conn_type]['mac-address']
         else:
             bytes = [unhexlify(v) for v in address.split(":")]
-            self.settings[self.conn_type]['mac-address'] = bytes
+            self._settings[self.conn_type]['mac-address'] = dbus.Array(bytes, signature='y')
 
     @property
     def auto(self):
         """ Return True if this connection uses network autoconfiguration """
-        return self.settings['ipv4']['method'] == 'auto'
+        return self._settings['ipv4']['method'] == 'auto'
             
     def set_auto(self):
         """ Configure this connection for network autoconfiguration """
-        self.settings['ipv4'] = {
-            'routes': [],
-            'addresses': [],
-            'dns': [],
+        self._settings['ipv4'] = {
+            'routes': dbus.Array([], signature='au'),
+            'addresses': dbus.Array([], signature='au'),
+            'dns': dbus.Array([], signature='u'),
             'method': 'auto',}
 
     @property
@@ -551,8 +579,8 @@ class BaseSettings(object):
         the mode to manual (disables network autoconfiguration).
         """
         entry = self._get_first_address()
-        entry[0] = socket.htonl(int(ipaddr.IPAddress(entry[0], version=4)))
-        self.settings['ipv4']['method'] = 'manual'
+        entry[0] = dbus.UInt32(socket.htonl(int(ipaddr.IPAddress(address, version=4))))
+        self._settings['ipv4']['method'] = 'manual'
 
     @property
     def netmask(self):
@@ -586,8 +614,8 @@ class BaseSettings(object):
         return mask
 
         entry = self._get_first_address()
-        entry[1] = mask
-        self.settings['ipv4']['method'] = 'manual'
+        entry[1] = dbus.UInt32(mask)
+        self._settings['ipv4']['method'] = 'manual'
         
     @property
     def gateway(self):
@@ -609,8 +637,8 @@ class BaseSettings(object):
         the mode to manual (disables network autoconfiguration).
         """
         entry =self._get_first_address()
-        entry[2] = socket.htonl(int(ipaddr.IPAddress(gateway, version=4)))
-        self.settings['ipv4']['method'] = 'manual'
+        entry[2] = dbus.UInt32(socket.htonl(int(ipaddr.IPAddress(gateway, version=4))))
+        self._settings['ipv4']['method'] = 'manual'
 
     @property
     def dns(self):
@@ -620,28 +648,34 @@ class BaseSettings(object):
         
         Only accesses the first DNS address defined
         """
-        if len(self.settings['ipv4']['dns']) == 0:
+        if len(self._settings['ipv4']['dns']) == 0:
             return None
         else:
-            return str(ipaddr.IPAddress(socket.ntohl(self.settings['ipv4']['dns'][0])))
+            return str(ipaddr.IPAddress(socket.ntohl(self._settings['ipv4']['dns'][0])))
 
     @dns.setter
     def dns(self, address):                
-        self.settings['ipv4']['dns'] = [socket.htonl(int(ipaddr.IPAddress(address)))]
+        self._settings['ipv4']['dns'] = [socket.htonl(int(ipaddr.IPAddress(address)))]
 
 class WirelessSettings(BaseSettings):
     def __repr__(self):
         return "<WirelessSettings (%s)>" % ("DHCP" if self.auto else "Static")
 
+    def __init__(self, properties=_default_settings_wireless):
+        super(WirelessSettings, self).__init__(properties)
+
 class WiredSettings(BaseSettings):        
     def __repr__(self):
         return "<WiredSettings (%s)>" % ("DHCP" if self.auto else "Static")
         
+    def __init__(self, properties=_default_settings_wired):
+        super(WiredSettings, self).__init__(properties)
+        
     @property        
     def duplex(self):
-        return self.settings['802-3-ethernet']['duplex']
+        return self._settings['802-3-ethernet']['duplex']
 
     @duplex.setter
     def duplex(self, value):
-        self.settings['802-3-ethernet']['duplex'] = value
+        self._settings['802-3-ethernet']['duplex'] = value
 
