@@ -346,13 +346,13 @@ class NetworkManager(object):
         return [Connection(self.bus, path) 
         for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME)]
 
-    def get_connection(self, id):
+    def get_connection(self, uuid):
         """
-        Returns a single connection given an id, or None if no connection 
-        exists with that id
+        Returns a single connection given a connection UUID, or None if no 
+        connection exists with that UUID
         """
         for conn in self.connections:
-            if conn.settings.id == id:
+            if conn.settings.uuid == id:
                 return conn
         
         return None
@@ -422,7 +422,7 @@ class Connection():
     def update(self, settings):
         """
         Update the connection to reflect the current values within the specified
-        settings object (must be a subclass of Settings
+        settings object (must be a subclass of Settings)
         """
         self.proxy.Update(settings._settings, dbus_interface=NM_SETTINGS_CONNECTION)
         
@@ -481,11 +481,20 @@ def Settings(settings):
         raise UnsupportedConnectionType("settings: connection.type is missing")
     
     if conn_type == "802-3-ethernet":
-        return WiredSettings(settings)
+        settings = WiredSettings(settings)
+        if settings.id is None:
+            settings.id = 'Wired Connection'
     elif conn_type == "802-11-wireless":
-        return WirelessSettings(settings)
+        settings = WirelessSettings(settings)
+        if settings.id is None:
+            settings.id = 'Wireless Connection'
     else:
         raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)    
+
+    if settings.uuid is None:
+        settings._settings['connection']['uuid'] = str(uuid.uuid4())
+       
+    return settings
 
 class BaseSettings(object):
 
@@ -494,8 +503,6 @@ class BaseSettings(object):
     def __init__(self, settings):
         self._settings = settings
         self.conn_type = settings['connection']['type']
-        self._settings['connection']['id'] = None
-        self._settings['connection']['uuid'] = str(uuid.uuid4())
         
     def __repr__(self):
         return "<Settings>"    
@@ -531,12 +538,16 @@ class BaseSettings(object):
     @property
     def id(self):
         """ The 'id' or name of the connection """
-        return self._settings['connection']['id']
+        return self._settings['connection']['id'] if self._settings['connection'].has_key('id') else None
 
     @id.setter
     def id(self, value):
         self._settings['connection']['id'] = value
     
+    @property
+    def uuid(self):
+        return self._settings['connection']['uuid'] if self._settings['connection'].has_key('uuid') else None
+
     @property
     def type(self):
         """ The connection type (usually indicates media standard) """
@@ -552,6 +563,10 @@ class BaseSettings(object):
     @autoconnect.setter
     def autoconnect(self, value):
         self._settings['connection']['autoconnect'] = value
+
+    @property
+    def timestamp(self):
+        return self._settings['connection']['timestamp'] if self._settings.has_key('timestamp') else 0
 
     @property
     def mac_address(self):
@@ -685,13 +700,14 @@ class WirelessSettings(BaseSettings):
     def __init__(self, properties=_default_settings_wireless):
         super(WirelessSettings, self).__init__(properties)
 
+
 class WiredSettings(BaseSettings):        
     def __repr__(self):
         return "<WiredSettings (%s)>" % ("DHCP" if self.auto else "Static")
         
     def __init__(self, properties=_default_settings_wired):
         super(WiredSettings, self).__init__(properties)
-        
+
     @property        
     def duplex(self):
         return self._settings['802-3-ethernet']['duplex']
