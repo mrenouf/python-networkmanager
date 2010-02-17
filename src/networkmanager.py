@@ -346,6 +346,17 @@ class NetworkManager(object):
         return [Connection(self.bus, path) 
         for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME)]
 
+    def get_connection(self, id):
+        """
+        Returns a single connection given an id, or None if no connection 
+        exists with that id
+        """
+        for conn in self.connections:
+            if conn.settings.id == id:
+                return conn
+        
+        return None
+
     @property    
     def active_connections(self):
         return [ActiveConnection(self.bus, path) 
@@ -428,7 +439,7 @@ _default_settings_wired = dbus.Dictionary({
         'type': '802-3-ethernet', 
     }), 
     '802-3-ethernet': dbus.Dictionary({
-        'duplex':'full',
+        'auto-negotiate': True,
     }),
     'ipv4': dbus.Dictionary({
         'routes': dbus.Array([], signature='au'),
@@ -532,6 +543,17 @@ class BaseSettings(object):
         return self._settings['connection']['type']
 
     @property
+    def autoconnect(self):
+        try:
+            return self._settings['connection']['autoconnect']
+        except KeyError:
+            return False
+
+    @autoconnect.setter
+    def autoconnect(self, value):
+        self._settings['connection']['autoconnect'] = value
+
+    @property
     def mac_address(self):
         """ The mac address of the connection if only a specific adapter should be used """
         eth = self._settings[self.conn_type]
@@ -611,8 +633,6 @@ class BaseSettings(object):
                 break
             ip_int >>= 1
             mask -= 1
-
-        return mask
 
         entry = self._get_first_address()
         entry[1] = dbus.UInt32(mask)
