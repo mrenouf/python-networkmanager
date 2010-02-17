@@ -134,11 +134,14 @@ def list_connections(nm=NetworkManager()):
         print "----------------------"
 
 def create_connection(parser, options, args, nm=NetworkManager()):
-
-    print options.__class__
+    types = {
+        'wired': DeviceType.ETHERNET, 
+        'wireless': DeviceType.WIFI
+    }
+    
     if not options.ensure_value('id', False):
         parser.error("Create: you must supply a connection id.")
-    
+
     if not options.ensure_value('device', False) and not options.ensure_value('type', False):
         parser.error("Create: you must specify a device name or connection type.")
 
@@ -154,21 +157,24 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     if device is not None:
         type = device.type
     else:
-        type = options.type
+        type = types[options.type]
                    
     # Create a settings object of the appropriate type
     settings = None
     print "Type: %s" % (type)
-    if type == 'wired':
+
+    if type == DeviceType.ETHERNET:
         settings = WiredSettings()
-    elif type == 'wireless':
+    elif type == DeviceType.WIFI:
         settings = WirelessSettings()
 
     # apply the settings        
-    print settings
+    #print settings
     settings.id = options.id
     if device is not None:
         settings.device = device
+        if type == DeviceType.ETHERNET:
+            settings.mac_address = device.hwaddress
         
     try:
         params = parse_connection_settings(args)
@@ -186,6 +192,7 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     if params.has_key('dns'):
         settings.dns = params['dns']
 
+    print settings
     nm.add_connection(settings)
 
 def update_connection(parser, options, args, nm=NetworkManager()):
@@ -239,27 +246,12 @@ def determine_connection(parser, options, nm=NetworkManager()):
     if len(id_conn) == 0 and len(dev_conn) > 1 and not options.id:
         parser.error("There is more than one connection associated with the specified device. The connection id must be specified.")   
 
-
     # both id and device specified
     if options.id and options.device:
         # find all connections from both sets with the same ids
         connections = [conn for conn in id_conn if conn.id in [conn.id for conn in dev_conn]]
         if (len(conncetions) == 0):
-            parser.error("The connection id '%s' is not associated with device '%s'", (id, dev))
-    
-    # finally if type was specified, filter on that
-    #if options.type:
-        #    wired = filter(is_wired_connection, nm.connections)
-
-
-        
-
-
-#def create_connection(options, args, nm=NetworkManager()):
-#    if options.device:   
-#    if options.id:
-    
-    
+            parser.error("The connection id '%s' is not associated with device '%s'", (id, dev))   
 
 def main(argv=None):
     #print find_active_devices()
@@ -356,6 +348,7 @@ def main(argv=None):
         disable_connection(parser, options, nm)
     else:
         parser.print_usage()
+
 
 
 if __name__ == "__main__":
