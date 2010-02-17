@@ -483,6 +483,7 @@ class BaseSettings(object):
     def __init__(self, settings):
         self._settings = settings
         self.conn_type = settings['connection']['type']
+        self._settings['connection']['id'] = None
         self._settings['connection']['uuid'] = str(uuid.uuid4())
         
     def __repr__(self):
@@ -676,6 +677,6 @@ class WiredSettings(BaseSettings):
         return self._settings['802-3-ethernet']['duplex']
 
     @duplex.setter
-    def duplex(self, value):
+    def set_duplex(self, value):
         self._settings['802-3-ethernet']['duplex'] = value
 
