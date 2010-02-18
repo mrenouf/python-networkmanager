@@ -250,52 +250,6 @@ def deactivate_connection(parser, options, nm=NetworkManager()):
         if active.connection.settings.uuid == id:
             nm.deactivate_connection(active.proxy)
 
-def determine_connection(parser, options, nm=NetworkManager()):
-    types = {'wired': '802-3-ethernet', 'wireless': '802-11-wireless'}
-    id = options.id
-    dev = options.device
-    type = options.type
-
-    id_conn = []
-    if options.id is not None:
-        conn = [conn for conn in nm.connections if conn.id is id]
-        if len(conn) is 0:
-            # no connection with this id exists
-            parser.error("Invalid connection id '%s'" % (options.id))
-
-    dev_conn = []
-    if dev is not None:
-        dev_conn = connections_for_device(dev, nm)
-
-    type = None
-    if options.type is not None:
-        type = types[options.type]
-
-    # neither connection id or device specified
-    if not options.id and not options.device:
-        parser.error("A connection id or device must be specified.")
-
-    # no connections found
-    if len(id_conn) == 0 and len(dev_conn) == 0:
-        if not options.device:
-            parser.error("There are no connections with the id '%s'" % (options.id))
-        if not options.id:
-            parser.error("There are no connections associated " 
-                         "with the device '%s'" % (options.device))
-
-    # only deivice specified and found more than one connection       
-    if len(id_conn) == 0 and len(dev_conn) > 1 and not options.id:
-        parser.error("There is more than one connection associated " 
-                     "with the specified device. The connection " 
-                     "id must be specified.")   
-
-    # both id and device specified
-    if options.id and options.device:
-        # find all connections from both sets with the same ids
-        connections = [conn for conn in id_conn if conn.id in [conn.id for conn in dev_conn]]
-        if (len(conncetions) == 0):
-            parser.error("The connection id '%s' is not associated with device '%s'", (id, dev))   
-
 def main(argv=None):
    
     if argv is None:
@@ -340,10 +294,10 @@ def main(argv=None):
                         const="create", 
                         help='Create a new connection')
 
-    action_group.add_option("--update", 
+    action_group.add_option("--modify", 
                         action="store_const", 
                         dest="action", 
-                        const="update",
+                        const="modify",
                         help='Update a connection')
 
     action_group.add_option("--delete", 
@@ -397,8 +351,8 @@ def main(argv=None):
         deactivate_connection(parser, options, nm)
     elif options.action is 'create':
         create_connection(parser, options, args, nm)
-    elif options.action is 'update':
-        update_connection(parser, options, args, nm)
+    elif options.action is 'modify':
+        modify_connection(parser, options, args, nm)
     elif options.action is 'delete':
         delete_connection(parser, options, nm)
     elif options.action is 'enable':
