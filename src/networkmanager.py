@@ -352,7 +352,7 @@ class NetworkManager(object):
         connection exists with that UUID
         """
         for conn in self.connections:
-            if conn.settings.uuid == id:
+            if conn.settings.uuid == uuid:
                 return conn
         
         return None
@@ -365,6 +365,13 @@ class NetworkManager(object):
     def add_connection(self, settings):
         print settings._settings
         self.settings.AddConnection(settings._settings, dbus_interface=NM_SETTINGS_NAME)
+        
+    def activate_connection(self, connection, device, service_name="org.freedesktop.NetworkManagerSystemSettings", specific_object="/"):
+        self.proxy.ActivateConnection(service_name, connection.proxy, device.proxy, specific_object, dbus_interface=NM_NAME)
+
+    def deactivate_connection(self, active_connection):
+        self.proxy.DeactivateConnection(active_connection, dbus_interface=NM_NAME)
+        
         
 class ActiveConnection():
     def __init__(self, bus, path):
