@@ -196,10 +196,36 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     print settings
     nm.add_connection(settings)
 
-def update_connection(parser, options, args, nm=NetworkManager()):
-    if not options.id:
-        parser.error("Create: you must supply a connection id " 
+def modify_connection(parser, options, args, nm=NetworkManager()):
+    id = options.ensure_value('id', None)
+    
+    if id is None:
+        parser.error("Modify: you must supply a connection id " 
                      "(Use the  '--list' option to find this).")
+
+    conn = nm.get_connection(id)
+    if conn is None:
+        parser.error("Modify: the id does not match an existing connection")       
+
+    settings = conn.settings
+    
+    try:
+        params = parse_connection_settings(args)
+    except ValueError, e:
+        parser.error(e)
+        
+    print params
+    if params['auto']:
+        settings.set_auto()
+    else:
+        settings.address = params['ip']
+        settings.netmask = params['mask']
+        settings.gateway = params['gw']
+    
+    if params.has_key('dns'):
+        settings.dns = params['dns']
+    print settings._settings
+    conn.update(settings)
 
 def delete_connection(parser, options, nm=NetworkManager()):
     id = options.ensure_value('id', None)
