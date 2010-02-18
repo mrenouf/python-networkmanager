@@ -694,11 +694,11 @@ class BaseSettings(object):
         if len(self._settings['ipv4']['dns']) == 0:
             return None
         else:
-            return str(ipaddr.IPAddress(socket.ntohl(self._settings['ipv4']['dns'][0])))
+            return str(ipaddr.IPAddress(socket.ntohl(int(self._settings['ipv4']['dns'][0]))))
 
     @dns.setter
     def dns(self, address):                
-        self._settings['ipv4']['dns'] = [socket.htonl(int(ipaddr.IPAddress(address)))]
+        self._settings['ipv4']['dns'] = dbus.Array([socket.htonl(int(ipaddr.IPAddress(address)))], signature='u')
 
 class WirelessSettings(BaseSettings):
     def __repr__(self):
