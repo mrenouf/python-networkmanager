@@ -497,9 +497,6 @@ def Settings(settings):
             settings.id = 'Wireless Connection'
     else:
         raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)    
-
-    if settings.uuid is None:
-        settings._settings['connection']['uuid'] = str(uuid.uuid4())
        
     return settings
 
@@ -554,6 +551,10 @@ class BaseSettings(object):
     @property
     def uuid(self):
         return self._settings['connection']['uuid'] if self._settings['connection'].has_key('uuid') else None
+
+    @uuid.setter
+    def uuid(self, uuid):
+        self._settings['connection']['uuid'] = str(uuid)
 
     @property
     def type(self):

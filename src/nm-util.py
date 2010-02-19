@@ -5,7 +5,7 @@ from optparse import OptionParser, OptionGroup
 from networkmanager import (NetworkManager, WirelessSettings, WiredSettings, 
     DeviceType, DeviceState, DeviceStateReason, DeviceCap)
 from ipaddr import IPAddress, IPv4IpValidationError
-
+import uuid
 nm = None
 
 class Usage(Exception):
@@ -49,7 +49,6 @@ def parse_connection_settings(args):
     pos = 0
 
     while pos < len(args):
-        print pos
         opt = args[pos]
         if not opt in ['ip','mask','gw','dns']:
             raise ValueError("Invalid option '%s'" % (opt))
@@ -79,25 +78,28 @@ def parse_connection_settings(args):
                                 
         pos += 1
 
+    settings_usage = "settings: \"[auto | ip <address> mask <address> gw <address> dns <dns>]"
+    
     if not options['auto']:
         if not options.has_key('ip'):
-            raise ValueError("Settings: Missing value for 'ip'\n"
-            "settings: \"ip <address> mask <address> gw <address>\"")
+            raise ValueError("Settings: Missing value for 'ip'\n" + settings_usage)
 
         if not options.has_key('mask'):
-            raise ValueError("Settings: Missing value for 'mask'\n"
-            "settings: \"ip <address> mask <address> gw <address>\"")
+            raise ValueError("Settings: Missing value for 'mask'\n" + settings_usage)
             
         if not options.has_key('gw'):
-            raise ValueError("Settings: missing value for 'gw'\n"
-            "settings: \"[auto | ip <address> mask <address> gw <address>]\"")
+            raise ValueError("Settings: missing value for 'gw'\n" + settings_usage)
+
+        if not options.has_key('dns'):
+            raise ValueError("Settings: missing value for 'dns'\n" + settings_usage)
+
     return options
 
 def list_connections(nm=NetworkManager()):
     types = {'802-3-ethernet':'Wired (Ethernet)','802-11-wireless':'Wireless (Wifi)'}
     for conn in nm.connections:
         print "UUID:     %s" % conn.settings.uuid
-        print "Name:     %s" % conn.settings.id
+        print "Id:       %s" % conn.settings.id
         print "Type:     %s" % (types[conn.settings.type])
         if conn.settings.mac_address is not None:
             device = device_for_hwaddr(conn.settings.mac_address)
@@ -117,7 +119,7 @@ def list_active_connections(nm=NetworkManager()):
     types = {'802-3-ethernet':'Wired (Ethernet)','802-11-wireless':'Wireless (Wifi)'}
     for active in nm.active_connections:
         print "UUID:     %s" % active.connection.settings.uuid
-        print "Name:     %s" % active.connection.settings.id
+        print "Id:       %s" % active.connection.settings.id
         print "State:    %s" % active.state
         #print "Default:  %s" % active.default
         print "Type:     %s" % (types[active.connection.settings.type])
@@ -139,11 +141,11 @@ def create_connection(parser, options, args, nm=NetworkManager()):
         'wired': DeviceType.ETHERNET, 
         'wireless': DeviceType.WIFI
     }
-    
-    if not options.ensure_value('name', False):
-        parser.error("Create: you must supply a connection name (--name=\"MyConnection\").")
 
-    if not options.ensure_value('device', False) and not options.ensure_value('type', False):
+    if not options.id:
+        parser.error("Create: you must supply a connection id (--id=\"MyConnection\").")
+
+    if not options.device and not options.type:
         parser.error("Create: you must specify a device name or connection type.")
 
     device = None
@@ -162,16 +164,17 @@ def create_connection(parser, options, args, nm=NetworkManager()):
                    
     # Create a settings object of the appropriate type
     settings = None
-    print "Type: %s" % (type)
 
     if type == DeviceType.ETHERNET:
         settings = WiredSettings()
     elif type == DeviceType.WIFI:
         settings = WirelessSettings()
 
+    settings.uuid = str(uuid.uuid4())
+    
     # apply the settings        
     #print settings
-    settings.id = options.name
+    settings.id = options.id
     if device is not None:
         settings.device = device
         if type == DeviceType.ETHERNET:
@@ -182,7 +185,6 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     except ValueError, e:
         parser.error(e)
         
-    print params
     if params['auto']:
         settings.set_auto()
     else:
@@ -192,20 +194,19 @@ def create_connection(parser, options, args, nm=NetworkManager()):
 
     if params.has_key('dns'):
         settings.dns = params['dns']
-
-    print settings
+    
     nm.add_connection(settings)
 
 def modify_connection(parser, options, args, nm=NetworkManager()):
-    id = options.ensure_value('id', None)
+    uuid = options.ensure_value('uuid', None)
     
-    if id is None:
-        parser.error("Modify: you must supply a connection id " 
+    if uuid is None:
+        parser.error("Modify: you must supply a connection uuid " 
                      "(Use the  '--list' option to find this).")
 
     conn = nm.get_connection(id)
     if conn is None:
-        parser.error("Modify: the id does not match an existing connection")       
+        parser.error("Modify: the uuid does not match an existing connection")       
 
     settings = conn.settings
     
@@ -214,7 +215,6 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
     except ValueError, e:
         parser.error(e)
         
-    print params
     if params['auto']:
         settings.set_auto()
     else:
@@ -224,28 +224,29 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
     
     if params.has_key('dns'):
         settings.dns = params['dns']
-    print settings._settings
+
     conn.update(settings)
 
 def delete_connection(parser, options, nm=NetworkManager()):
-    id = options.ensure_value('id', None)
+    uuid = options.ensure_value('uuid', None)
     
-    if id is None:
-        parser.error("Create: you must supply a connection id.")
+    if uuid is None:
+        parser.error("Create: you must supply a connection uuid.")
 
-    conn = nm.get_connection(id)
+    conn = nm.get_connection(uuid)
     if conn is None:
-        parser.error("Delete: the id does not match an existing connection")       
+        parser.error("Delete: the uuid does not match an existing connection")       
 
     conn.delete()
     
 def activate_connection(parser, options, nm=NetworkManager()):
-    id = options.ensure_value('id', None)
+    uuid = options.ensure_value('uuid', None)
     
-    if id is None:
-        parser.error("Activate: you must supply a connection id (see: --list)")
+    if uuid is None:
+        parser.error("Modify: you must supply a connection uuid " 
+                     "(Use the  '--list' option to find this).")
 
-    conn = nm.get_connection(id)
+    conn = nm.get_connection(uuid)
     device = None
     
     print "Devices: %s" % nm.devices
@@ -267,22 +268,24 @@ def activate_connection(parser, options, nm=NetworkManager()):
     nm.activate_connection(conn, device)
 
 def deactivate_connection(parser, options, nm=NetworkManager()):
-    id = options.ensure_value('id', None)
+    uuid = options.ensure_value('uuid', None)
     
-    if id is None:
-        parser.error("Create: you must supply a connection id (see --list)")
+    if uuid is None:
+        parser.error("Modify: you must supply a connection uuid " 
+                     "(Use the  '--list' option to find this).")
 
     for active in nm.active_connections:
-        if active.connection.settings.uuid == id:
+        if active.connection.settings.uuid == uuid:
             nm.deactivate_connection(active.proxy)
+            return
 
 def main(argv=None):
    
     if argv is None:
         argv = sys.argv
 
-    usage = ("usage: %prog --ACTION [--id ID] [-d DEVICE] " 
-             "[-t TYPE] [auto | ip <address> mask <address> gw <address>]")
+    usage = ("usage: %prog --ACTION [--uuid ID] [--name=""NAME""] [-d DEVICE] " 
+             "[-t TYPE] [auto | ip <address> mask <address> gw <address> dns <dns>]")
 
     parser = OptionParser(usage)
 
@@ -337,15 +340,15 @@ def main(argv=None):
     details_group = OptionGroup(parser, "Details")
 
     # Options
+    details_group.add_option("--uuid", 
+                        action="store", 
+                        dest="uuid",
+                        help="the unique id of connection to act on (see --list)")
+
     details_group.add_option("--id", 
                         action="store", 
                         dest="id",
-                        help="the connection to act on (see --list)")
-
-    details_group.add_option("--name", 
-                        action="store", 
-                        dest="name",
-                        help="the name to use for the connection")
+                        help="the id (name) to use for the connection")
 
     details_group.add_option("-t", 
                         choices=['wired','wireless'], 
