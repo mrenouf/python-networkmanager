@@ -204,7 +204,7 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
         parser.error("Modify: you must supply a connection uuid " 
                      "(Use the  '--list' option to find this).")
 
-    conn = nm.get_connection(id)
+    conn = nm.get_connection(uuid)
     if conn is None:
         parser.error("Modify: the uuid does not match an existing connection")       
 
