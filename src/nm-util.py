@@ -132,7 +132,7 @@ def list_active_connections(nm=NetworkManager()):
             print "Gateway:  %s" % active.connection.settings.gateway
 
         if active.connection.settings.dns is not None:
-            print "DNS:     %s" % conn.settings.dns
+            print "DNS:     %s"  % active.connection.settings.dns
 
 def create_connection(parser, options, args, nm=NetworkManager()):
     types = {
