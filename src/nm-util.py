@@ -50,7 +50,7 @@ def parse_connection_settings(args):
 
     while pos < len(args):
         opt = args[pos]
-        if not opt in ['ip','mask','gw','dns']:
+        if not opt in ['auto','ip','mask','gw','dns']:
             raise ValueError("Invalid option '%s'" % (opt))
 
         if opt != "auto":
