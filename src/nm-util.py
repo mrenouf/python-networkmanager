@@ -284,7 +284,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    usage = ("usage: %prog --ACTION [--uuid ID] [--name=""NAME""] [-d DEVICE] " 
+    usage = ("usage: %prog --ACTION [--uuid ID] [--id=""NAME""] [-d DEVICE] " 
              "[-t TYPE] [auto | ip <address> mask <address> gw <address> dns <dns>]")
 
     parser = OptionParser(usage)
@@ -299,31 +299,31 @@ def main(argv=None):
                        const="list",
                         help='List the existing connections')
 
-    action_group.add_option("--list-active", 
+    action_group.add_option("-L", "--list-active", 
                         action="store_const", 
                         dest="action", 
                         const="list-active",
                         help='List the connection which are currently active')
 
-    action_group.add_option("--activate",
+    action_group.add_option("-A", "--activate",
                         action="store_const",
                         dest="action",
                         const="activate",
-                        help='Activate a connection (must specify ID)') 
+                        help='Activate a connection (must specify UUID)') 
 
-    action_group.add_option("--deactivate",
+    action_group.add_option("-D", "--deactivate",
                         action="store_const",
                         dest="action",
                         const="deactivate",
-                        help='Deactivate a connection (must specify ID)') 
+                        help='Deactivate a connection (must specify UUID)') 
 
-    action_group.add_option("--create", 
+    action_group.add_option("-C", "--create", 
                         action="store_const", 
                         dest="action", 
                         const="create", 
                         help='Create a new connection')
 
-    action_group.add_option("--modify", 
+    action_group.add_option("-M", "--modify", 
                         action="store_const", 
                         dest="action", 
                         const="modify",
@@ -340,12 +340,12 @@ def main(argv=None):
     details_group = OptionGroup(parser, "Details")
 
     # Options
-    details_group.add_option("--uuid", 
+    details_group.add_option("-u", "--uuid", 
                         action="store", 
                         dest="uuid",
                         help="the unique id of connection to act on (see --list)")
 
-    details_group.add_option("--id", 
+    details_group.add_option("-i", "--id", 
                         action="store", 
                         dest="id",
                         help="the id (name) to use for the connection")
