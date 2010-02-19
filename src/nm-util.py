@@ -113,7 +113,7 @@ def list_connections(nm=NetworkManager()):
             print "Gateway:  %s" % conn.settings.gateway
 
         if conn.settings.dns is not None:
-            print "DNS:     %s" % conn.settings.dns
+            print "DNS:      %s" % conn.settings.dns
 
 def list_active_connections(nm=NetworkManager()):
     types = {'802-3-ethernet':'Wired (Ethernet)','802-11-wireless':'Wireless (Wifi)'}
@@ -134,7 +134,7 @@ def list_active_connections(nm=NetworkManager()):
             print "Gateway:  %s" % active.connection.settings.gateway
 
         if active.connection.settings.dns is not None:
-            print "DNS:     %s" % conn.settings.dns
+            print "DNS:      %s"  % active.connection.settings.dns
 
 def create_connection(parser, options, args, nm=NetworkManager()):
     types = {
