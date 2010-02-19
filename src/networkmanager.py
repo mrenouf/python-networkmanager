@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import glib
-import gtk
 import dbus
 import enum
 import socket
