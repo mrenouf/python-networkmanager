@@ -519,6 +519,7 @@ class BaseSettings(object):
         within this connection. No adddresses usually indicates
         autoconfiguration
         """
+        if not self._settings.has_key('ipv4'): return False
         return len(self._settings['ipv4']['addresses']) > 0
 
     def _get_first_address(self):
@@ -532,7 +533,10 @@ class BaseSettings(object):
         
         Note: Does not support multiple addresses on a single connection.
         """
-        addresses = self._settings['ipv4']['addresses']
+        addresses = []
+        if self._settings.has_key('ipv4'):
+            addresses = self._settings['ipv4']['addresses']
+            
         if len(addresses) == 0:
             addresses = dbus.Array([dbus.Array([dbus.UInt32(0), dbus.UInt32(0), dbus.UInt32(0)], signature='u')], signature='au')
             self._settings['ipv4']['addresses'] = addresses
@@ -594,6 +598,8 @@ class BaseSettings(object):
     @property
     def auto(self):
         """ Return True if this connection uses network autoconfiguration """
+        if not self._has_address():
+            return True
         return self._settings['ipv4']['method'] == 'auto'
             
     def set_auto(self):
@@ -691,6 +697,9 @@ class BaseSettings(object):
         
         Only accesses the first DNS address defined
         """
+        if not self._has_address():
+            return False
+
         if len(self._settings['ipv4']['dns']) == 0:
             return None
         else:
