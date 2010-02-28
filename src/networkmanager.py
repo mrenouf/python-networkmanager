@@ -201,6 +201,7 @@ class Device(object):
         return object.__new__(cls)
     
     def __init__(self, bus, object_path):
+        self.bus = bus
         self.proxy = bus.get_object(NM_NAME, object_path)
     
     def __repr__(self):
