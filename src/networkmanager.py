@@ -163,13 +163,34 @@ DeviceStateReason = enum.new("DeviceStateReason",
     SUPPLICANT_AVAILABLE = 42,
 )
 
+def network_int_to_ip4addr(n):
+    return str(ipaddr.IPAddress(socket.ntohl(n), version=4))
+
+def ip4addr_to_network_int(addr):
+    return socket.htonl(int(ipaddr.IPAddress(addr, version=4)))
+
+def prefixlen_to_netmask(prefixlen):
+    all_ones = (2**32) - 1
+    netmask_int = all_ones ^ (all_ones >> prefixlen)
+    return str(ipaddr.IPAddress(netmask_int))
+
+def netmask_to_prefixlen(netmask):
+    prefixlen=32
+    ip_int = int(ipaddr.IPAddress(netmask))
+    while prefixlen:
+        if ip_int & 1 == 1:
+            break
+        ip_int >>= 1
+        prefixlen -= 1
+
+    return prefixlen
+
 class Device(object):
     def __new__(cls, bus, path):
         _subclasses = { 
             DeviceType.ETHERNET: DeviceWired,
             DeviceType.WIFI: DeviceWireless,
         }
-                
         device = bus.get_object(NM_NAME, path)        
         type = DeviceType.from_value(device.Get(NM_DEVICE, 'DeviceType'))
         try:
@@ -621,7 +642,8 @@ class BaseSettings(object):
             return None
     
         entry = self._get_first_address()
-        return str(ipaddr.IPAddress(socket.ntohl(entry[0]), version=4))
+        return network_int_to_ip4addr(entry[0])
+
         
     @address.setter
     def address(self, address):
@@ -630,7 +652,7 @@ class BaseSettings(object):
         the mode to manual (disables network autoconfiguration).
         """
         entry = self._get_first_address()
-        entry[0] = dbus.UInt32(socket.htonl(int(ipaddr.IPAddress(address, version=4))))
+        entry[0] = dbus.UInt32(ip4addr_to_network_int(address))
         self._settings['ipv4']['method'] = 'manual'
 
     @property
@@ -645,8 +667,7 @@ class BaseSettings(object):
             
         entry = self._get_first_address()
         prefixlen = int(entry[1])
-        netmask_int = self._ALL_ONES ^ (self._ALL_ONES >> prefixlen)
-        return str(ipaddr.IPAddress(netmask_int))
+        return prefixlen_to_netmask(prefixlen)
     
     @netmask.setter
     def netmask(self, netmask):
@@ -654,18 +675,10 @@ class BaseSettings(object):
         Assigns the network mask for thisconnection. This also implicitly
         sets the mode to manual (disables network autoconfiguration).
         """
-        mask=32
-        ip_int = int(ipaddr.IPAddress(netmask))
-        while mask:
-            if ip_int & 1 == 1:
-                break
-            ip_int >>= 1
-            mask -= 1
-
         entry = self._get_first_address()
-        entry[1] = dbus.UInt32(mask)
+        entry[1] = dbus.UInt32(netmask_to_prefixlen(netmask))
         self._settings['ipv4']['method'] = 'manual'
-        
+
     @property
     def gateway(self):
         """
@@ -677,7 +690,7 @@ class BaseSettings(object):
             return None
 
         entry = self._get_first_address()
-        return str(ipaddr.IPAddress(socket.ntohl(entry[2]), version=4))
+        return network_int_to_ip4addr(entry[2])
         
     @gateway.setter
     def gateway(self, gateway):
@@ -686,7 +699,7 @@ class BaseSettings(object):
         the mode to manual (disables network autoconfiguration).
         """
         entry =self._get_first_address()
-        entry[2] = dbus.UInt32(socket.htonl(int(ipaddr.IPAddress(gateway, version=4))))
+        entry[2] = dbus.UInt32(ip4addr_to_network_int(gateway))
         self._settings['ipv4']['method'] = 'manual'
 
     @property
@@ -703,11 +716,12 @@ class BaseSettings(object):
         if len(self._settings['ipv4']['dns']) == 0:
             return None
         else:
-            return str(ipaddr.IPAddress(socket.ntohl(int(self._settings['ipv4']['dns'][0]))))
+            value = self._settings['ipv4']['dns'][0]
+            return etwork_int_to_ip4addr(value)
 
     @dns.setter
     def dns(self, address):                
-        self._settings['ipv4']['dns'] = dbus.Array([socket.htonl(int(ipaddr.IPAddress(address)))], signature='u')
+        self._settings['ipv4']['dns'] = dbus.Array([ip4addr_to_network_int(address)], signature='u')
 
 class WirelessSettings(BaseSettings):
     def __repr__(self):
