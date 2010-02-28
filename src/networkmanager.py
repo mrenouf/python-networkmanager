@@ -219,12 +219,23 @@ class Device(object):
         return self.proxy.Get(NM_DEVICE, "Interface")
 
     @property
+    def hwaddress(self):
+        return None
+
+    @property
     def driver(self):
         return self.proxy.Get(NM_DEVICE, "Driver")
 
     @property
     def capabilities(self):
-        return DeviceCap.from_value(self.proxy.Get(NM_DEVICE, "Capabilities"))
+        caps = []
+        value = self.proxy.Get(NM_DEVICE, "Capabilities")
+        if value & 0x01:
+            caps.append(DeviceCap.SUPPORTED)
+        if value & 0x02:
+            caps.append(DeviceCap.CARRIER_DETECT)
+
+        return caps
 
     @property
     def ipv4_address(self):
