@@ -369,10 +369,27 @@ class NetworkManager(object):
     @property
     def devices(self):
         """
-        Returns a list of object paths of network devices known to the system
+        Returns a list of devices known to the system
         """
         return [Device(self.bus, path) for path in self.proxy.GetDevices()]
-    
+
+    @property    
+    def devices_map(self):
+        """
+        Returns a dict where the keys are device types and values are lists
+        of devices of that type.
+        """
+        devices = {}
+
+        for path in self.proxy.GetDevices():
+            device = Device(self.bus, path)
+            if not devices.has_key(device.type):
+                devices[device.type] = [device]
+            else:
+                devices[device.type].append(device)
+
+        return devices                
+            
     @property
     def connections(self):
         return [Connection(self.bus, path) 
