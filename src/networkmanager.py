@@ -373,7 +373,7 @@ class NetworkManager(object):
         """
         return [Device(self.bus, path) for path in self.proxy.GetDevices()]
 
-    @property    
+    @property
     def devices_map(self):
         """
         Returns a dict where the keys are device types and values are lists
@@ -388,8 +388,8 @@ class NetworkManager(object):
             else:
                 devices[device.type].append(device)
 
-        return devices                
-            
+        return devices
+
     @property
     def connections(self):
         return [Connection(self.bus, path) 
