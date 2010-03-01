@@ -10,6 +10,8 @@ import ipaddr
 from binascii import unhexlify
 
 ETH="802-3-ethernet"
+DBUS_NAME="org.freedesktop.DBus"
+DBUS_PROPS_NAME="org.freedesktop.DBus.Properties"
 
 NM_NAME="org.freedesktop.NetworkManager"
 NM_PATH="/org/freedesktop/NetworkManager"
@@ -24,6 +26,20 @@ NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
 NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
 NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
+
+State = enum.new("State",
+    # The NetworkManager daemon is in an unknown state.
+    UNKNOWN = 0,
+    # The NetworkManager daemon is asleep and all interfaces managed by it are inactive.
+    ASLEEP = 1,
+    # The NetworkManager daemon is connecting a device.
+    # FIXME: What does this mean when one device is active and another is connecting?
+    CONNECTING = 2,
+    # The NetworkManager daemon is connected.
+    CONNECTED = 3,
+    # The NetworkManager daemon is disconnected.
+    DISCONNECTED = 4
+)
 
 DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
 
@@ -462,7 +478,34 @@ class NetworkManager(object):
 
     def deactivate_connection(self, active_connection):
         self.proxy.DeactivateConnection(active_connection, dbus_interface=NM_NAME)
-        
+
+    @property
+    def wireless_enabled(self):
+        """Indicates if wireless is currently enabled or not."""
+        return self.proxy.Get(NM_NAME, "WirelessEnabled",
+            dbus_interface=DBUS_PROPS_NAME) != 0
+
+    @wireless_enabled.setter
+    def wireless_enabled(self, state):
+        """Sets whether wireless should be enabled or not."""
+        self.proxy.Set(NM_NAME, "WirelessEnabled", dbus.Boolean(state),
+            dbus_interface=DBUS_PROPS_NAME)
+
+    @property
+    def wireless_hardware_enabled(self):
+        """
+        Indicates if the wireless hardware is currently
+        enabled, i.e. the state of the RF kill switch.
+        """
+        return self.proxy.Get(NM_NAME, "WirelessHardwareEnabled",
+            dbus_interface=DBUS_PROPS_NAME) != 0
+
+    @property
+    def state(self):
+        """
+        Describes the overall state of the daemon.
+        """
+        return State.from_value(self.proxy.Get(NM_NAME, "State"))
         
 class ActiveConnection():
     def __init__(self, bus, path):
