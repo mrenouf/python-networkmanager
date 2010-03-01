@@ -2,10 +2,10 @@
 
 import sys
 from optparse import OptionParser, OptionGroup
-from networkmanager import (NetworkManager, WirelessSettings, WiredSettings, 
-    DeviceType, DeviceState, DeviceStateReason, DeviceCap)
-from ipaddr import IPAddress, IPv4IpValidationError
+from networkmanager import *
+from networkmanager.ipaddr import *
 import uuid
+
 nm = None
 
 class Usage(Exception):

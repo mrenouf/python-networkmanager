@@ -1,0 +1,11 @@
+Source: python-networkmanager
+Section: python
+Priority: extra
+Maintainer: Mark Renouf <mark.renouf@gmail.com>
+Build-Depends: cdbs, debhelper (>= 7), python (>= 2.6), python-support, python-dbus
+Standards-Version: 3.8.3
+
+Package: python-networkmanager
+Architecture: all
+Depends: python-dbus, python-support, ${shlibs:Depends}, ${misc:Depends}
+Description: A Python interface to NetowrkManager, via DBus
