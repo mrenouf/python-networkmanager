@@ -23,6 +23,8 @@ NM_SETTINGS_NAME="org.freedesktop.NetworkManagerSettings"
 NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
 NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
+NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
+
 DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
 
 DeviceState = enum.new("DeviceState", 
@@ -247,19 +249,19 @@ class Device(object):
 
     @property
     def ip4config(self):
-        return self.proxy.Get(NM_DEVICE, "Ip4Config")
+        return IP4Config(self.bus, self.proxy.Get(NM_DEVICE, "Ip4Config"))
 
     @property
     def dhcp4config(self):
-        return self.proxy.Get(NM_DEVICE, "Dhcp4Config")
+        return None
 
     @property
     def ip6config(self):
-        return self.proxy.Get(NM_DEVICE, "Ip6Config")
+        return None
 
     @property
     def managed(self):
-        return self.proxy.Get(NM_DEVICE, "Managed")
+        return self.proxy.Get(NM_DEVICE, "Managed") == 1
 
     @property
     def type(self):
@@ -310,6 +312,46 @@ class DeviceWireless(Device):
     @property    
     def wireless_capabilities(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "WirelessCapabilities")
+
+class IP4Config(object):
+    def __init__(self, bus, path):
+        self.proxy = bus.get_object(NM_NAME, path)
+
+    @property
+    def addresses(self):
+        return [
+            [network_int_to_ip4addr(addr[0]),
+            prefixlen_to_netmask(addr[1]),
+            network_int_to_ip4addr(addr[2])]
+            for addr in
+                self.proxy.Get(NM_IP4CONFIG, "Addresses")]
+
+    @property
+    def name_servers(self):
+        return [network_int_to_ip4addr(addr)
+            for addr in
+                self.proxy.Get(NM_IP4CONFIG, "Nameservers")]
+
+    @property
+    def wins_servers(self):
+        return [network_int_to_ip4addr(addr)
+            for addr in
+                self.proxy.Get(NM_IP4CONFIG, "WinsServers")]
+
+    @property
+    def domains(self):
+        return [str(value)
+            for value in self.proxy.Get(NM_IP4CONFIG, "Domains")]
+
+    @property
+    def routes(self):
+        return [
+            [network_int_to_ip4addr(route[0]),
+            prefixlen_to_netmask(route[1]),
+            network_int_to_ip4addr(route[2]),
+            route[3]]
+                for route in
+                    self.proxy.Get(NM_IP4CONFIG, "Routes")]
 
 class AccessPoint(object):
     def __init__(self, bus, path):
