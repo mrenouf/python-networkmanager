@@ -831,7 +831,7 @@ class BaseSettings(object):
             return None
         else:
             value = self._settings['ipv4']['dns'][0]
-            return etwork_int_to_ip4addr(value)
+            return network_int_to_ip4addr(value)
 
     @dns.setter
     def dns(self, address):                
