@@ -35,8 +35,13 @@ python-networkmanager (0.3) karmic; urgency=low
 
   [ Mark Renouf ]
   * Enabled bash completion by installing to /etc/bash_completion.d
+  * changelog updates for 0.3
+  * changelog updates for 0.3
 
- -- Mark Renouf <mark@blackbox>  Thu, 04 Mar 2010 17:19:58 -0500
+  [ Daenyth ]
+  * Move completion to a dir so we can install with the right name
+
+ -- Mark Renouf <mark.renouf@gmail.com>  Thu, 04 Mar 2010 17:41:53 -0500
 
 python-networkmanager (0.1) unstable; urgency=low
 
