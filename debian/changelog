@@ -1,3 +1,43 @@
+python-networkmanager (0.3) karmic; urgency=low
+
+  [ Mark Renouf ]
+  * Corrected what seemed to be a naming conflict in the use of "name"
+    as an an argument name
+
+  [ Daenyth ]
+  * nm-util.py: Fixed --list-active 'dns' output
+  * networkmanager.py: Don't import gtk
+  * nm-util.py: Aligned output from --list/-active
+
+  [ Mark Renouf ]
+  * nm-util.py: Change incorrect call on 'id' to 'uuid'
+  * nm-util.py: Allow 'auto' as a parameter
+
+  [ Daenyth ]
+  * .gitignore: *.pyc
+  * nm-util.py: Added short options
+
+  [ Mark Renouf ]
+  * Gracefully handle a lack of an 'ipv4' element when listing settings
+  * Cleanup unused files
+  * Extracted some address and netmask manipulation funtions for reuse
+  * Keep a reference to DBus within Device objects
+  * Implemented device capabilities
+  * Added a method to get devices grouped by type
+  * Removed trailing whitespace
+  * Implemented Device.ip4config
+  * Implemented additional properties on NetworkManager
+  * Changed project name to python-networkmanager
+
+  [ Daenyth ]
+  * _networkmanager.py: Fixed typo
+  * bash_completion: Initial commit
+
+  [ Mark Renouf ]
+  * Enabled bash completion by installing to /etc/bash_completion.d
+
+ -- Mark Renouf <mark@blackbox>  Thu, 04 Mar 2010 17:19:58 -0500
+
 python-networkmanager (0.1) unstable; urgency=low
 
   * Initial Release.
