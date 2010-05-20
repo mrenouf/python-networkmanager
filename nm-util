@@ -243,7 +243,7 @@ def activate_connection(parser, options, nm=NetworkManager()):
     uuid = options.ensure_value('uuid', None)
     
     if uuid is None:
-        parser.error("Modify: you must supply a connection uuid " 
+        parser.error("Activate: you must supply a connection uuid " 
                      "(Use the  '--list' option to find this).")
 
     conn = nm.get_connection(uuid)
@@ -273,7 +273,7 @@ def deactivate_connection(parser, options, nm=NetworkManager()):
     uuid = options.ensure_value('uuid', None)
     
     if uuid is None:
-        parser.error("Modify: you must supply a connection uuid " 
+        parser.error("Deactivate: you must supply a connection uuid " 
                      "(Use the  '--list' option to find this).")
 
     for active in nm.active_connections:
