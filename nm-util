@@ -247,6 +247,8 @@ def activate_connection(parser, options, nm=NetworkManager()):
                      "(Use the  '--list' option to find this).")
 
     conn = nm.get_connection(uuid)
+    if conn is None:
+        parser.error("Activate: the uuid does not match an existing connection")       
     device = None
     
     print "Devices: %s" % nm.devices
