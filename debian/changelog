@@ -1,3 +1,10 @@
+python-networkmanager (0.4) karmic; urgency=low
+
+  [ Daenyth ]
+  * _networkmanager.py: BaseSettings._get_first_address() KeyError fix
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Thu, 20 May 2010 13:23:23 -0400
+
 python-networkmanager (0.3) karmic; urgency=low
 
   [ Mark Renouf ]
