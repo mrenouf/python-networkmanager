@@ -674,6 +674,7 @@ class BaseSettings(object):
             
         if len(addresses) == 0:
             addresses = dbus.Array([dbus.Array([dbus.UInt32(0), dbus.UInt32(0), dbus.UInt32(0)], signature='u')], signature='au')
+            self._settings['ipv4'] = {}
             self._settings['ipv4']['addresses'] = addresses
         return addresses[0] # NOTE: only reports from first address!          
 
