@@ -666,6 +666,10 @@ def Settings(settings):
         settings = WirelessSettings(settings)
         if settings.id is None:
             settings.id = 'Wireless Connection'
+    elif conn_type == "cdma":
+        settings = CdmaSettings(settings)
+        if settings.id is None:
+            settings.id = 'CDMA Connection'
     else:
         raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)
 
