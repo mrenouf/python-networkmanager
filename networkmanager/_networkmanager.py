@@ -43,7 +43,7 @@ State = enum.new("State",
 
 DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
 
-DeviceState = enum.new("DeviceState", 
+DeviceState = enum.new("DeviceState",
     #The device is in an unknown state.
     UNKNOWN = 0,
     #The device is not managed by NetworkManager.
@@ -75,7 +75,7 @@ ActiveConnectionState = enum.new("ActiveConnectionState",
     ACTIVATED = 2,
 )
 
-DeviceCap = enum.new("DeviceCap", 
+DeviceCap = enum.new("DeviceCap",
     NONE = 0,
     SUPPORTED = 1,
     CARRIER_DETECT = 2,
@@ -92,7 +92,7 @@ WifiMode = enum.new("WifiMode",
 )
 
 # NM_DEVICE_STATE_REASON
-DeviceStateReason = enum.new("DeviceStateReason", 
+DeviceStateReason = enum.new("DeviceStateReason",
     #The reason for the device state change is unknown.
     UNKNOWN = 0,
     #The state change is normal.
@@ -205,26 +205,26 @@ def netmask_to_prefixlen(netmask):
 
 class Device(object):
     def __new__(cls, bus, path):
-        _subclasses = { 
+        _subclasses = {
             DeviceType.ETHERNET: DeviceWired,
             DeviceType.WIFI: DeviceWireless,
         }
-        device = bus.get_object(NM_NAME, path)        
+        device = bus.get_object(NM_NAME, path)
         type = DeviceType.from_value(device.Get(NM_DEVICE, 'DeviceType'))
         try:
             cls = _subclasses[type]
         except KeyError:
             cls = Device
-        
+
         return object.__new__(cls)
-    
+
     def __init__(self, bus, object_path):
         self.bus = bus
         self.proxy = bus.get_object(NM_NAME, object_path)
-    
+
     def __repr__(self):
         return "<Device: %s [%s]>" % (self.interface, self.hwaddress)
-        
+
     def disconnect(self):
         self.proxy.Disconnect()
 
@@ -287,15 +287,15 @@ class DeviceWired(Device):
     def __init__(self, bus, object_path):
         Device.__init__(self, bus, object_path)
 
-    @property    
+    @property
     def hwaddress(self):
         return self.proxy.Get(NM_DEVICE_WIRED, 'HwAddress')
 
-    @property    
+    @property
     def speed(self):
         return self.proxy.Get(NM_DEVICE_WIRED, 'Speed')
 
-    @property    
+    @property
     def carrier(self):
         return self.proxy.Get(NM_DEVICE_WIRED, 'Carrier')
 
@@ -306,26 +306,26 @@ class DeviceWireless(Device):
 
     @property
     def access_points(self):
-        return [AccessPoint(self.bus, path) 
+        return [AccessPoint(self.bus, path)
         for path in self.proxy.GetAccessPoints(dbus_interface=NM_DEVICE_WIRELESS)]
-    
+
     @property
     def hwaddress(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "HwAddress")
-        
+
     @property
     def mode(self):
         return WifiMode.from_value(self.proxy.Get(NM_DEVICE_WIRELESS, "Mode"))
 
-    @property    
+    @property
     def bitrate(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "Bitrate")
 
-    @property    
+    @property
     def active_access_point(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "ActiveAccessPoint")
 
-    @property    
+    @property
     def wireless_capabilities(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "WirelessCapabilities")
 
@@ -337,8 +337,8 @@ class IP4Config(object):
     def addresses(self):
         return [
             [network_int_to_ip4addr(addr[0]),
-            prefixlen_to_netmask(addr[1]),
-            network_int_to_ip4addr(addr[2])]
+             prefixlen_to_netmask(addr[1]),
+             network_int_to_ip4addr(addr[2])]
             for addr in
                 self.proxy.Get(NM_IP4CONFIG, "Addresses")]
 
@@ -374,37 +374,37 @@ class AccessPoint(object):
         self.proxy = bus.get_object(NM_NAME, path)
 
     @property
-    def flags(self):    
+    def flags(self):
         pass
-    
+
     @property
     def wpaflags(self):
         pass
-        
+
     @property
     def rsnflags(self):
         pass
-        
+
     @property
     def ssid(self):
         pass
-        
+
     @property
     def frequency(self):
         pass
-        
+
     @property
     def hwaddress(self):
         pass
-        
+
     @property
     def mode(self):
         pass
-    
+
     @property
     def maxbitrate(self):
         pass
-        
+
     @property
     def strength(self):
         pass
@@ -412,15 +412,15 @@ class AccessPoint(object):
 
 class NetworkManager(object):
     # Map of subclasses to return for different device types
-    
+
     def __init__(self):
         self.bus = dbus.SystemBus()
         self.proxy = self.bus.get_object(NM_NAME, NM_PATH)
         self.settings = self.bus.get_object(NM_NAME, NM_SETTINGS_PATH)
-    
+
     def __repr__(self):
         return "<NetworkManager>"
-    
+
     def sleep(self, sleep):
         pass
 
@@ -450,29 +450,29 @@ class NetworkManager(object):
 
     @property
     def connections(self):
-        return [Connection(self.bus, path) 
+        return [Connection(self.bus, path)
         for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME)]
 
     def get_connection(self, uuid):
         """
-        Returns a single connection given a connection UUID, or None if no 
+        Returns a single connection given a connection UUID, or None if no
         connection exists with that UUID
         """
         for conn in self.connections:
             if conn.settings.uuid == uuid:
                 return conn
-        
+
         return None
 
-    @property    
+    @property
     def active_connections(self):
-        return [ActiveConnection(self.bus, path) 
+        return [ActiveConnection(self.bus, path)
         for path in self.proxy.Get(NM_SETTINGS_CONNECTION, "ActiveConnections")]
 
     def add_connection(self, settings):
         print settings._settings
         self.settings.AddConnection(settings._settings, dbus_interface=NM_SETTINGS_NAME)
-        
+
     def activate_connection(self, connection, device, service_name="org.freedesktop.NetworkManagerSystemSettings", specific_object="/"):
         self.proxy.ActivateConnection(service_name, connection.proxy, device.proxy, specific_object, dbus_interface=NM_NAME)
 
@@ -506,7 +506,7 @@ class NetworkManager(object):
         Describes the overall state of the daemon.
         """
         return State.from_value(self.proxy.Get(NM_NAME, "State"))
-        
+
 class ActiveConnection():
     def __init__(self, bus, path):
         self.bus = bus
@@ -514,7 +514,7 @@ class ActiveConnection():
 
     def __repr__(self):
         return "<ActiveConnection: %s>" % self.connection.settings.id
-        
+
     @property
     def service_name(self):
         return self.proxy.Get(NM_CONN_ACTIVE, "ServiceName")
@@ -522,7 +522,7 @@ class ActiveConnection():
     @property
     def connection(self):
         path = self.proxy.Get(NM_CONN_ACTIVE, "Connection")
-        return Connection(self.bus, path)        
+        return Connection(self.bus, path)
 
     @property
     def specific_object(self):
@@ -544,14 +544,14 @@ class ActiveConnection():
     @property
     def vpn(self):
         return self.proxy.Get(NM_CONN_ACTIVE, "Vpn")
-    
+
 class Connection():
     def __init__(self, bus, path):
         self.proxy = bus.get_object(NM_NAME, path);
-    
+
     def __repr__(self):
         return "<Connection: \"%s\">" % self.settings.id
-    
+
     @property
     def settings(self):
         """
@@ -566,7 +566,7 @@ class Connection():
         settings object (must be a subclass of Settings)
         """
         self.proxy.Update(settings._settings, dbus_interface=NM_SETTINGS_CONNECTION)
-        
+
     def delete(self):
         """ Removes this connection """
         self.proxy.Delete(dbus_interface=NM_SETTINGS_CONNECTION)
@@ -577,8 +577,8 @@ class UnsupportedConnectionType(Exception):
 
 _default_settings_wired = dbus.Dictionary({
     'connection': dbus.Dictionary({
-        'type': '802-3-ethernet', 
-    }), 
+        'type': '802-3-ethernet',
+    }),
     '802-3-ethernet': dbus.Dictionary({
         'auto-negotiate': True,
     }),
@@ -598,8 +598,8 @@ _default_settings_wired = dbus.Dictionary({
 
 _default_settings_wireless = dbus.Dictionary({
     'connection': dbus.Dictionary({
-        'type': '802-11-wireless', 
-    }), 
+        'type': '802-11-wireless',
+    }),
     '802-11-wireless': dbus.Dictionary({}),
     'ipv4': dbus.Dictionary({
         'routes': dbus.Array([], signature='au'),
@@ -615,12 +615,12 @@ _default_settings_wireless = dbus.Dictionary({
     })
 })
 
-def Settings(settings):        
+def Settings(settings):
     try:
         conn_type = settings['connection']['type']
     except KeyError:
         raise UnsupportedConnectionType("settings: connection.type is missing")
-    
+
     if conn_type == "802-3-ethernet":
         settings = WiredSettings(settings)
         if settings.id is None:
@@ -630,8 +630,8 @@ def Settings(settings):
         if settings.id is None:
             settings.id = 'Wireless Connection'
     else:
-        raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)    
-       
+        raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)
+
     return settings
 
 class BaseSettings(object):
@@ -641,9 +641,9 @@ class BaseSettings(object):
     def __init__(self, settings):
         self._settings = settings
         self.conn_type = settings['connection']['type']
-        
+
     def __repr__(self):
-        return "<Settings>"    
+        return "<Settings>"
 
 
     def _has_address(self):
@@ -660,23 +660,23 @@ class BaseSettings(object):
     def _get_first_address(self):
         """
         Internal function
-        
-        Returns the first 'address' defined which is actually 
+
+        Returns the first 'address' defined which is actually
         an (address, maskbits, gateway) triplet within an array.
-        
+
         If an address is not defined, one is created, assigned and returned.
-        
+
         Note: Does not support multiple addresses on a single connection.
         """
         addresses = []
         if self._settings.has_key('ipv4'):
             addresses = self._settings['ipv4']['addresses']
-            
+
         if len(addresses) == 0:
             addresses = dbus.Array([dbus.Array([dbus.UInt32(0), dbus.UInt32(0), dbus.UInt32(0)], signature='u')], signature='au')
             self._settings['ipv4'] = {}
             self._settings['ipv4']['addresses'] = addresses
-        return addresses[0] # NOTE: only reports from first address!          
+        return addresses[0] # NOTE: only reports from first address!
 
     @property
     def id(self):
@@ -686,7 +686,7 @@ class BaseSettings(object):
     @id.setter
     def id(self, value):
         self._settings['connection']['id'] = value
-    
+
     @property
     def uuid(self):
         return self._settings['connection']['uuid'] if self._settings['connection'].has_key('uuid') else None
@@ -737,7 +737,7 @@ class BaseSettings(object):
         if not self._has_address():
             return True
         return self._settings['ipv4']['method'] == 'auto'
-            
+
     def set_auto(self):
         """ Configure this connection for network autoconfiguration """
         self._settings['ipv4'] = {
@@ -755,11 +755,11 @@ class BaseSettings(object):
         """
         if not self._has_address():
             return None
-    
+
         entry = self._get_first_address()
         return network_int_to_ip4addr(entry[0])
 
-        
+
     @address.setter
     def address(self, address):
         """
@@ -774,16 +774,16 @@ class BaseSettings(object):
     def netmask(self):
         """
         Returns the network mask of the connection in dotted quad
-        notation, or None if the connection has no statically assigned 
+        notation, or None if the connection has no statically assigned
         address information.
         """
         if not self._has_address():
             return None
-            
+
         entry = self._get_first_address()
         prefixlen = int(entry[1])
         return prefixlen_to_netmask(prefixlen)
-    
+
     @netmask.setter
     def netmask(self, netmask):
         """
@@ -806,7 +806,7 @@ class BaseSettings(object):
 
         entry = self._get_first_address()
         return network_int_to_ip4addr(entry[2])
-        
+
     @gateway.setter
     def gateway(self, gateway):
         """
@@ -822,7 +822,7 @@ class BaseSettings(object):
         """
         The assigned DNS server if the connection is manually configured
         or autoconfiguration should be forced to use a specific DNS server.
-        
+
         Only accesses the first DNS address defined
         """
         if not self._has_address():
@@ -835,7 +835,7 @@ class BaseSettings(object):
             return network_int_to_ip4addr(value)
 
     @dns.setter
-    def dns(self, address):                
+    def dns(self, address):
         self._settings['ipv4']['dns'] = dbus.Array([ip4addr_to_network_int(address)], signature='u')
 
 class WirelessSettings(BaseSettings):
@@ -846,14 +846,14 @@ class WirelessSettings(BaseSettings):
         super(WirelessSettings, self).__init__(properties)
 
 
-class WiredSettings(BaseSettings):        
+class WiredSettings(BaseSettings):
     def __repr__(self):
         return "<WiredSettings (%s)>" % ("DHCP" if self.auto else "Static")
-        
+
     def __init__(self, properties=_default_settings_wired):
         super(WiredSettings, self).__init__(properties)
 
-    @property        
+    @property
     def duplex(self):
         return self._settings['802-3-ethernet']['duplex']
 
