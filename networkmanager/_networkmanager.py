@@ -209,6 +209,7 @@ class Device(object):
         _subclasses = {
             DeviceType.ETHERNET: DeviceWired,
             DeviceType.WIFI: DeviceWireless,
+            DeviceType.CDMA: DeviceCdma,
         }
         device = bus.get_object(NM_NAME, path)
         type = DeviceType.from_value(device.Get(NM_DEVICE, 'DeviceType'))
