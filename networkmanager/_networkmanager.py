@@ -19,6 +19,7 @@ NM_PATH="/org/freedesktop/NetworkManager"
 NM_DEVICE="org.freedesktop.NetworkManager.Device"
 NM_DEVICE_WIRED="org.freedesktop.NetworkManager.Device.Wired"
 NM_DEVICE_WIRELESS="org.freedesktop.NetworkManager.Device.Wireless"
+NM_DEVICE_CDMA="org.freedesktop.NetworkManager.Device.Cdma"
 NM_CONN_ACTIVE="org.freedesktop.NetworkManager.Connection.Active"
 
 NM_SETTINGS_NAME="org.freedesktop.NetworkManagerSettings"
@@ -328,6 +329,22 @@ class DeviceWireless(Device):
     @property
     def wireless_capabilities(self):
         return self.proxy.Get(NM_DEVICE_WIRELESS, "WirelessCapabilities")
+
+class DeviceCdma(Device):
+    def __init__(self, bus, object_path):
+        Device.__init__(self, bus, object_path)
+
+    @property
+    def number(self):
+        return self.proxy.Get(NM_DEVICE_CDMA, "Number")
+
+    @property
+    def username(self):
+        return self.proxy.Get(NM_DEVICE_CDMA, "Username")
+
+    @property
+    def password(self):
+        return self.proxy.Get(NM_DEVICE_CDMA, "Password")
 
 class IP4Config(object):
     def __init__(self, bus, path):
