@@ -96,7 +96,9 @@ def parse_connection_settings(args):
     return options
 
 def list_connections(nm=NetworkManager()):
-    types = {'802-3-ethernet':'Wired (Ethernet)','802-11-wireless':'Wireless (Wifi)'}
+    types = {'802-3-ethernet':'Wired (Ethernet)',
+             '802-11-wireless':'Wireless (Wifi)',
+             'cdma':'CDMA (Mobile Broadband)',}
     for conn in nm.connections:
         print "UUID:     %s" % conn.settings.uuid
         print "Id:       %s" % conn.settings.id

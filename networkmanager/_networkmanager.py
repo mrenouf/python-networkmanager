@@ -633,6 +633,25 @@ _default_settings_wireless = dbus.Dictionary({
     })
 })
 
+_default_settings_cdma = dbus.Dictionary({
+    'connection': dbus.Dictionary({
+        'type': 'cdma',
+    }),
+    'cdma': dbus.Dictionary({}),
+    'ipv4': dbus.Dictionary({
+        'routes': dbus.Array([], signature='au'),
+        'addresses': dbus.Array([], signature='au'),
+        'dns': dbus.Array([],signature='u'),
+        'method': 'auto',
+    }),
+    'ipv6': dbus.Dictionary({
+        'routes': dbus.Array([], signature='(ayuayu)'),
+        'addresses': dbus.Array([], signature='(ayu)'),
+        'dns': dbus.Array([],signature='ay'),
+        'method': 'ignore',
+    })
+})
+
 def Settings(settings):
     try:
         conn_type = settings['connection']['type']
@@ -647,6 +666,10 @@ def Settings(settings):
         settings = WirelessSettings(settings)
         if settings.id is None:
             settings.id = 'Wireless Connection'
+    elif conn_type == "cdma":
+        settings = CdmaSettings(settings)
+        if settings.id is None:
+            settings.id = 'CDMA Connection'
     else:
         raise UnsupportedConnectionType("Unknown connection type: '%s'" % conn_type)
 
@@ -880,3 +903,9 @@ class WiredSettings(BaseSettings):
     def set_duplex(self, value):
         self._settings['802-3-ethernet']['duplex'] = value
 
+class CdmaSettings(BaseSettings):
+    def __repr__(self):
+        return "<CdmaSettings (%s)>" % ("DHCP" if self.auto else "Static")
+
+    def __init__(self, properties=_default_settings_wireless):
+        super(CdmaSettings, self).__init__(properties)
