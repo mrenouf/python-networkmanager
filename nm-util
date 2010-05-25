@@ -246,7 +246,7 @@ def activate_connection(parser, options, nm=NetworkManager()):
         parser.error("Activate: the uuid does not match an existing connection")
     device = None
 
-    print "Devices: %s" % nm.devices
+    #print "Devices: %s" % nm.devices
     types = {
         DeviceType.ETHERNET: '802-3-ethernet',
         DeviceType.WIFI: '802-11-wireless',
@@ -254,7 +254,7 @@ def activate_connection(parser, options, nm=NetworkManager()):
     }
 
     for d in nm.devices:
-        print d.type
+        #print d.type
         try:
             if types[d.type] == conn.settings.type:
                 device = d
