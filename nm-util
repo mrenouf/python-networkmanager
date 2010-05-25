@@ -12,12 +12,6 @@ class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-def is_ethernet(connection):
-    return connection.settings.type == '802-3-ethernet'
-
-def is_wifi(connection):
-    return connection.settings.type == '802-11-wireless'
-
 def device_for_hwaddr(hwaddr, nm=NetworkManager()):
     for device in nm.devices:
         if device.hwaddress == hwaddr:
