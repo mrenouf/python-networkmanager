@@ -48,6 +48,8 @@ the complexities of python-dbus and provide a simplified api to
 interacting with network manager to control network configuration
 tasks""",
           keywords=["network-manager", "DBus"],
-          py_modules=["networkmanager"])
+          py_modules=["networkmanager"],
+          scripts=['nm-util'],
+          data_files=[('/etc/bash_completion.d', ['bash_completion/nm-util']),])
 
 if __name__ == "__main__": main()
