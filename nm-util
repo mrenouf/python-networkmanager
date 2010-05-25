@@ -81,17 +81,10 @@ def parse_connection_settings(args):
     settings_usage = "settings: \"[auto | ip <address> mask <address> gw <address> dns <dns>]"
 
     if not options['auto']:
-        if not options.has_key('ip'):
-            raise ValueError("Settings: Missing value for 'ip'\n" + settings_usage)
-
-        if not options.has_key('mask'):
-            raise ValueError("Settings: Missing value for 'mask'\n" + settings_usage)
-
-        if not options.has_key('gw'):
-            raise ValueError("Settings: missing value for 'gw'\n" + settings_usage)
-
-        if not options.has_key('dns'):
-            raise ValueError("Settings: missing value for 'dns'\n" + settings_usage)
+        required_opts = ('ip', 'mask', 'gw', 'dns')
+        for opt in required_opts:
+            if not opt in options:
+                raise ValueError("Settings: Missing value for '%s'\n" % opt + settings_usage)
 
     return options
 
