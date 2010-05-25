@@ -256,14 +256,18 @@ def activate_connection(parser, options, nm=NetworkManager()):
     print "Devices: %s" % nm.devices
     types = {
         DeviceType.ETHERNET: '802-3-ethernet',
-        DeviceType.WIFI: '802-11-wireless'
+        DeviceType.WIFI: '802-11-wireless',
+        DeviceType.CDMA: 'cdma',
     }
 
     for d in nm.devices:
         print d.type
-        if types[d.type] == conn.settings.type:
-            device = d
-            break
+        try:
+            if types[d.type] == conn.settings.type:
+                device = d
+                break
+        except KeyError:
+            raise UnsupportedConnectionType("Activate: connection type '%s' is not supported" % d.type)
 
     if device is None:
         parser.error("Activate: there are no network devices "
