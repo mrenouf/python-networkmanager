@@ -1,1 +1,1 @@
-from _networkmanager import *
+from networkmanager import *
