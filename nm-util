@@ -116,7 +116,7 @@ def list_active_connections(nm=NetworkManager()):
         #print "Settings from %s:" % active.service_name
 
         if active.connection.settings.auto:
-            print "Address: auto (DHCP)"
+            print "Address:  auto (DHCP)"
         else:
             print "Address:  %s" % active.connection.settings.address
             print "Netmask:  %s" % active.connection.settings.netmask
