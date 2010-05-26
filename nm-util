@@ -105,7 +105,9 @@ def list_connections(nm=NetworkManager()):
             print "DNS:      %s" % conn.settings.dns
 
 def list_active_connections(nm=NetworkManager()):
-    types = {'802-3-ethernet':'Wired (Ethernet)','802-11-wireless':'Wireless (Wifi)'}
+    types = {'802-3-ethernet':'Wired (Ethernet)',
+             '802-11-wireless':'Wireless (Wifi)',
+             'cdma':'CDMA (Mobile Broadband)',}
     for active in nm.active_connections:
         print "UUID:     %s" % active.connection.settings.uuid
         print "Id:       %s" % active.connection.settings.id
