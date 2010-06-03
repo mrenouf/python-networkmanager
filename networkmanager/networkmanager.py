@@ -653,6 +653,7 @@ _default_settings_cdma = dbus.Dictionary({
 })
 
 def Settings(settings):
+    # TODO: Refactor into a class like Device
     try:
         conn_type = settings['connection']['type']
     except KeyError:
