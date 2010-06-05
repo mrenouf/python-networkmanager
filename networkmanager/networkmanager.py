@@ -771,13 +771,13 @@ class BaseSettings(object):
 
     @property
     def timestamp(self):
-        return self._settings['connection']['timestamp'] if self._settings.has_key('timestamp') else 0
+        return self._settings['connection']['timestamp'] if 'timestamp' in self._settings else 0
 
     @property
     def mac_address(self):
         """ The mac address of the connection if only a specific adapter should be used """
         eth = self._settings[self.conn_type]
-        if not eth.has_key('mac-address'): return None
+        if not 'mac-address' in eth: return None
         address = self._settings[self.conn_type]['mac-address']
         return ":".join([("%02X" % int(value)) for value in address])
 
