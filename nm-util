@@ -146,7 +146,8 @@ def list_active_connections(nm=NetworkManager()):
 def create_connection(parser, options, args, nm=NetworkManager()):
     types = {
         'wired': DeviceType.ETHERNET,
-        'wireless': DeviceType.WIFI
+        'wireless': DeviceType.WIFI,
+        'cdma': DeviceType.CDMA,
     }
 
     if not options.id:
