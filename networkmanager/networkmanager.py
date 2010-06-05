@@ -16,11 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glib
 import dbus
 import enum
 import socket
-import uuid
 import ipaddr
 
 from binascii import unhexlify
