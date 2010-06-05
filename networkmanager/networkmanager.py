@@ -461,6 +461,7 @@ class NetworkManager(object):
         """
         Returns a list of devices known to the system
         """
+        # TODO: return dict keyed by dev
         return [Device(self.bus, path) for path in self.proxy.GetDevices()]
 
     @property

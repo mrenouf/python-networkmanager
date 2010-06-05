@@ -157,6 +157,7 @@ def create_connection(parser, options, args, nm=NetworkManager()):
 
     device = None
     # find the device with the specified interface name ('eth0', etc)
+    # TODO: use dict lookup table
     if options.device:
         for d in nm.devices:
             if d.interface == options.device:
