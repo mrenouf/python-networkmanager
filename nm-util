@@ -218,6 +218,8 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
         parser.error("Modify: the uuid does not match an existing connection")
 
     settings = conn.settings
+    if options.type and conn.settings.type != options.type:
+        parser.error("Modify: cannot change the type of a connection. Use --create")
 
     try:
         params = parse_connection_settings(args)
