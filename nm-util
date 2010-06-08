@@ -385,6 +385,7 @@ def main(argv=None):
 
     nm = NetworkManager()
 
+    # TODO: Use dict as dispatch table
     if options.action is 'list':
         list_connections(nm)
     elif options.action is 'list-active':
