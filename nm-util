@@ -385,10 +385,10 @@ def main(argv=None):
                         help="the id (name) to use for the connection")
 
     details_group.add_option("-t",
-                        choices=['wired','wireless'],
+                        choices=['wired','wireless', 'cdma'],
                         action="store",
                         dest="type",
-                        help="the connection type [wired|wireless]")
+                        help="the connection type [wired|wireless|cdma]")
 
     details_group.add_option("-d",
                         action="store",
