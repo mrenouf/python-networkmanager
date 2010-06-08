@@ -747,7 +747,7 @@ class BaseSettings(object):
 
     @property
     def uuid(self):
-        return self._settings['connection']['uuid'] if self._settings['connection'].has_key('uuid') else None
+        return self._settings['connection']['uuid'] if 'uuid' in self._settings['connection'] else None
 
     @uuid.setter
     def uuid(self, uuid):
@@ -923,5 +923,5 @@ class CdmaSettings(BaseSettings):
     def __repr__(self):
         return "<CdmaSettings (%s)>" % ("DHCP" if self.auto else "Static")
 
-    def __init__(self, properties=_default_settings_wireless):
+    def __init__(self, properties=_default_settings_cdma):
         super(CdmaSettings, self).__init__(properties)
