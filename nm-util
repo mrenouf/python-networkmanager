@@ -179,18 +179,21 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     # Create a settings object of the appropriate type
     settings = None
 
+    # FIXME: Smelly (Factory pattern to fix?)
     if type == DeviceType.ETHERNET:
         settings = WiredSettings()
     elif type == DeviceType.WIFI:
         settings = WirelessSettings()
+    elif type == DeviceType.CDMA:
+        settings = CdmaSettings()
 
     settings.uuid = str(uuid.uuid4())
 
     # apply the settings
-    #print settings
     settings.id = options.id
     if device is not None:
         settings.device = device
+        # TODO: Add Device::get_hwaddress()
         if type == DeviceType.ETHERNET:
             settings.mac_address = device.hwaddress
 
@@ -207,8 +210,10 @@ def create_connection(parser, options, args, nm=NetworkManager()):
         settings.netmask = params['mask']
         settings.gateway = params['gw']
 
-    if params.has_key('dns'):
-        settings.dns = params['dns']
+    possible_settings = ('dns','num','user','pass')
+    for s in possible_settings:
+        if s in params:
+            settings.s = params[s]
 
     nm.add_connection(settings)
 
@@ -240,8 +245,10 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
         settings.netmask = params['mask']
         settings.gateway = params['gw']
 
-    if params.has_key('dns'):
-        settings.dns = params['dns']
+    possible_settings = ('dns','num','user','pass')
+    for s in possible_settings:
+        if s in params:
+            settings.s = params[s]
 
     conn.update(settings)
 
