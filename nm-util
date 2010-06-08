@@ -110,6 +110,9 @@ def list_connections(nm=NetworkManager()):
     types = {'802-3-ethernet':'Wired (Ethernet)',
              '802-11-wireless':'Wireless (Wifi)',
              'cdma':'CDMA (Mobile Broadband)',}
+    # TODO: factor out to display_connection(), share with
+    #       list_active_connections, and allow displaying a single
+    #       connection (nm-util -l -u <uuid>)
     for conn in nm.connections:
         print "UUID:     %s" % conn.settings.uuid
         print "Id:       %s" % conn.settings.id
