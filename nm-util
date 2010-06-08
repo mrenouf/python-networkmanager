@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import sys
+import dbus
 from optparse import OptionParser, OptionGroup
 from networkmanager import *
 from networkmanager.ipaddr import *
@@ -57,10 +58,19 @@ def parse_connection_settings(args):
     """
     options = {"auto": True}
     pos = 0
+    # ip-based options (for static config, mostly)
+    ipv4_opts = ('ip','mask','gw','dns',)
+    # Options passed with direct values.
+    #   Currently used with CDMA
+    string_opts = ('num','user','pass',)
+    # Auto is the 'default' option
+    allowed_opts = ['auto',]
+    allowed_opts.extend(ipv4_opts)
+    allowed_opts.extend(string_opts)
 
     while pos < len(args):
         opt = args[pos]
-        if not opt in ['auto','ip','mask','gw','dns']:
+        if not opt in allowed_opts:
             raise ValueError("Invalid option '%s'" % (opt))
 
         if opt != "auto":
@@ -71,23 +81,21 @@ def parse_connection_settings(args):
 
             value = args[pos]
             try:
-                if opt  == "dns":
-                    options['dns'] = IPAddress(value,version=4)
-                else:
-                    if opt == "ip":
-                        options['ip'] = IPAddress(value,version=4)
-                    elif opt  == "mask":
-                        options['mask'] = IPAddress(value,version=4)
-                    elif opt  == "gw":
-                        options['gw'] = IPAddress(value,version=4)
-
-                    options['auto'] = False
+                if opt in ipv4_opts:
+                    options[opt] = IPAddress(value,version=4)
 
             except IPv4IpValidationError, e:
                 raise ValueError("Invalid value for '%s': %s" % (opt, e))
 
+        if opt in string_opts:
+            options[opt] = dbus.String(value)
+
+        if 'ip' in options:
+            options['auto'] = False
+
         pos += 1
 
+    # TODO: Update for CDMA
     settings_usage = "settings: \"[auto | ip <address> mask <address> gw <address> dns <dns>]"
 
     if not options['auto']:
