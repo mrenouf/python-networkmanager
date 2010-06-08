@@ -503,7 +503,6 @@ class NetworkManager(object):
         for path in self.proxy.Get(NM_SETTINGS_CONNECTION, "ActiveConnections")]
 
     def add_connection(self, settings):
-        print settings._settings
         self.settings.AddConnection(settings._settings, dbus_interface=NM_SETTINGS_NAME)
 
     def activate_connection(self, connection, device, service_name="org.freedesktop.NetworkManagerSystemSettings", specific_object="/"):
