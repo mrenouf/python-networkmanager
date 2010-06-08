@@ -166,10 +166,7 @@ def create_connection(parser, options, args, nm=NetworkManager()):
 
     # if a device was specified, create a connection of the same type
     # otherwise use the type that was supplied through the 'type' option
-    if device is not None:
-        type = device.type
-    else:
-        type = types[options.type]
+    type = device.type if device else types[options.type]
 
     # Create a settings object of the appropriate type
     settings = None
