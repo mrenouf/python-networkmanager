@@ -189,6 +189,7 @@ def create_connection(parser, options, args, nm=NetworkManager()):
         if type == DeviceType.ETHERNET:
             settings.mac_address = device.hwaddress
 
+    # FIXME: Code duplication vs modify_connection()
     try:
         params = parse_connection_settings(args)
     except ValueError, e:
@@ -221,6 +222,7 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
     if options.type and conn.settings.type != options.type:
         parser.error("Modify: cannot change the type of a connection. Use --create")
 
+    # FIXME: Code duplication vs create_connection()
     try:
         params = parse_connection_settings(args)
     except ValueError, e:
