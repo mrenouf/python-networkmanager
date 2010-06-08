@@ -23,7 +23,6 @@ import ipaddr
 
 from binascii import unhexlify
 
-ETH="802-3-ethernet"
 DBUS_NAME="org.freedesktop.DBus"
 DBUS_PROPS_NAME="org.freedesktop.DBus.Properties"
 
@@ -607,6 +606,7 @@ class Connection():
 class UnsupportedConnectionType(Exception):
     """ Encountered an unknown value within connection->type """
 
+# FIXME: This seems smelly... replace with composition?
 _default_settings_wired = dbus.Dictionary({
     'connection': dbus.Dictionary({
         'type': '802-3-ethernet',
@@ -651,19 +651,25 @@ _default_settings_cdma = dbus.Dictionary({
     'connection': dbus.Dictionary({
         'type': 'cdma',
     }),
-    'cdma': dbus.Dictionary({}),
+    'cdma': dbus.Dictionary({
+        'number': '#777',
+    }),
     'ipv4': dbus.Dictionary({
         'routes': dbus.Array([], signature='au'),
         'addresses': dbus.Array([], signature='au'),
         'dns': dbus.Array([],signature='u'),
         'method': 'auto',
     }),
-    'ipv6': dbus.Dictionary({
-        'routes': dbus.Array([], signature='(ayuayu)'),
-        'addresses': dbus.Array([], signature='(ayu)'),
-        'dns': dbus.Array([],signature='ay'),
-        'method': 'ignore',
-    })
+    'ppp': dbus.Dictionary({}),
+    'serial': dbus.Dictionary({
+        'baud': dbus.UInt32(115200L, variant_level=1)
+    }),
+#    'ipv6': dbus.Dictionary({
+#        'routes': dbus.Array([], signature='(ayuayu)'),
+#        'addresses': dbus.Array([], signature='(ayu)'),
+#        'dns': dbus.Array([],signature='ay'),
+#        'method': 'ignore',
+#    })
 })
 
 def Settings(settings):
@@ -924,3 +930,10 @@ class CdmaSettings(BaseSettings):
 
     def __init__(self, properties=_default_settings_cdma):
         super(CdmaSettings, self).__init__(properties)
+
+#class SerialSettings(BaseSettings):
+#    def __repr__(self):
+#        return "<SerialSettings>"
+#
+#    def __init__(self, properties=_default_settings_serial):
+#        super(SerialSettings, self).__init__(properties)
