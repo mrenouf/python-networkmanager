@@ -482,6 +482,7 @@ class NetworkManager(object):
 
     @property
     def connections(self):
+        # TODO: return dict keyed by uuid
         return [Connection(self.bus, path)
         for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME)]
 
