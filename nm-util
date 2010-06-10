@@ -330,7 +330,7 @@ def main(argv=None):
     action_group.add_option("-l", "--list",
                         action="store_const",
                         dest="action",
-                       const="list",
+                        const="list",
                         help='List the existing connections')
 
     action_group.add_option("-L", "--list-active",
