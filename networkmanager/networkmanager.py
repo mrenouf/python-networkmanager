@@ -473,7 +473,7 @@ class NetworkManager(object):
 
         for path in self.proxy.GetDevices():
             device = Device(self.bus, path)
-            if not devices.has_key(device.type):
+            if not device.type in devices:
                 devices[device.type] = [device]
             else:
                 devices[device.type].append(device)
