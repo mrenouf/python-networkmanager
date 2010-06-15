@@ -320,7 +320,6 @@ def activate_connection(parser, options, nm=NetworkManager()):
     }
 
     for d in nm.devices:
-        #print d.type
         try:
             if types[d.type] == conn.settings.type:
                 device = d
