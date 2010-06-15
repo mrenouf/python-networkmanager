@@ -151,7 +151,10 @@ def make_connection_filter(options):
             try:
                 return str(dev.hwaddress) == conn.settings.mac_address
             except AttributeError:
-                # dev or dev.hwaddress is not there
+                # dev.hwaddress is not there
+                return False
+            except NameError:
+                # dev is not there
                 return False
 
     def connection_filter(conn):
