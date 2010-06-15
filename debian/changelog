@@ -1,3 +1,15 @@
+python-networkmanager (0.5~1.gbp3620da) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @3620da861401518178e56409d3a0ab826fdc8cf4 **
+
+  [ Daenyth ]
+  * Add support for CDMA connections
+  * Set license to Apache2
+  * General code cleanup
+  * Improved option parsing
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Tue, 15 Jun 2010 13:01:11 -0400
+
 python-networkmanager (0.4) karmic; urgency=low
 
   [ Daenyth ]
