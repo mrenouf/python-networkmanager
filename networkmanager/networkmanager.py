@@ -665,12 +665,6 @@ _default_settings_cdma = dbus.Dictionary({
     'serial': dbus.Dictionary({
         'baud': dbus.UInt32(115200L, variant_level=1)
     }),
-#    'ipv6': dbus.Dictionary({
-#        'routes': dbus.Array([], signature='(ayuayu)'),
-#        'addresses': dbus.Array([], signature='(ayu)'),
-#        'dns': dbus.Array([],signature='ay'),
-#        'method': 'ignore',
-#    })
 })
 
 def Settings(settings):
@@ -931,10 +925,3 @@ class CdmaSettings(BaseSettings):
 
     def __init__(self, properties=_default_settings_cdma):
         super(CdmaSettings, self).__init__(properties)
-
-#class SerialSettings(BaseSettings):
-#    def __repr__(self):
-#        return "<SerialSettings>"
-#
-#    def __init__(self, properties=_default_settings_serial):
-#        super(SerialSettings, self).__init__(properties)
