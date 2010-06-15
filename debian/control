@@ -7,5 +7,5 @@ Standards-Version: 3.8.3
 
 Package: python-networkmanager
 Architecture: all
-Depends: python-dbus, python-support, ${shlibs:Depends}, ${misc:Depends}
+Depends: python-dbus, python-support, network-manager, modemmanager, mobile-broadband-provider-info ${shlibs:Depends}, ${misc:Depends}
 Description: A Python interface to NetowrkManager, via DBus
