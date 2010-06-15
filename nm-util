@@ -113,32 +113,58 @@ def parse_connection_settings(args):
 
     return options
 
-def list_connections(nm=NetworkManager()):
+def display_connection(conn):
     types = {'802-3-ethernet':'Wired (Ethernet)',
              '802-11-wireless':'Wireless (Wifi)',
              'cdma':'CDMA (Mobile Broadband)',}
-    # TODO: factor out to display_connection(), share with
-    #       list_active_connections, and allow displaying a single
-    #       connection (nm-util -l -u <uuid>)
-    for conn in nm.connections:
-        print "UUID:     %s" % conn.settings.uuid
-        print "Id:       %s" % conn.settings.id
-        print "Type:     %s" % (types[conn.settings.type])
-        if conn.settings.mac_address is not None:
-            device = device_for_hwaddr(conn.settings.mac_address)
-            print "Device:   %s" % ("Unknown" if device is None else device.interface)
 
-        if conn.settings.auto:
-            print "Address:  auto (DHCP)"
-        else:
-            print "Address:  %s" % conn.settings.address
-            print "Netmask:  %s" % conn.settings.netmask
-            print "Gateway:  %s" % conn.settings.gateway
+    print "UUID:     %s" % conn.settings.uuid
+    print "Id:       %s" % conn.settings.id
+    print "Type:     %s" % (types[conn.settings.type])
+    if conn.settings.mac_address is not None:
+        device = device_for_hwaddr(conn.settings.mac_address)
+        print "Device:   %s" % ("Unknown" if device is None else device.interface)
 
-        if conn.settings.dns is not None:
-            print "DNS:      %s" % conn.settings.dns
+    if conn.settings.auto:
+        print "Address:  auto (DHCP)"
+    else:
+        print "Address:  %s" % conn.settings.address
+        print "Netmask:  %s" % conn.settings.netmask
+        print "Gateway:  %s" % conn.settings.gateway
 
-def list_active_connections(nm=NetworkManager()):
+    if conn.settings.dns is not None:
+        print "DNS:      %s" % conn.settings.dns
+
+def make_connection_filter(options):
+    types = {'wired': '802-3-ethernet',
+             'wireless': '802-11-wireless',
+             'cdma':'cdma',}
+    typefilt = lambda x: True
+    devfilt = lambda x: True
+
+    if options.type:
+        typefilt = lambda conn: types[options.type] == str(conn.settings.type)
+
+    if options.device:
+        def devfilt(conn):
+            dev = device_by_name(options.device)
+            if dev is None: return False
+            if dev.hwaddress is None: return False
+            return str(dev.hwaddress) == conn.settings.mac_address
+
+    def connection_filter(conn):
+        return typefilt(conn) and devfilt(conn)
+
+    return connection_filter
+
+
+def list_connections(options, nm=NetworkManager()):
+    # TODO: Allow displaying a single connection (nm-util -l -u <uuid>)
+    filt = make_connection_filter(options)
+    for conn in filter(filt, nm.connections):
+        display_connection(conn)
+
+def list_active_connections(options, nm=NetworkManager()):
     types = {'802-3-ethernet':'Wired (Ethernet)',
              '802-11-wireless':'Wireless (Wifi)',
              'cdma':'CDMA (Mobile Broadband)',}
@@ -413,9 +439,9 @@ def main(argv=None):
 
     # TODO: Use dict as dispatch table
     if options.action is 'list':
-        list_connections(nm)
+        list_connections(options, nm)
     elif options.action is 'list-active':
-        list_active_connections(nm)
+        list_active_connections(options, nm)
     elif options.action is 'activate':
         activate_connection(parser, options, nm)
     elif options.action is 'deactivate':
