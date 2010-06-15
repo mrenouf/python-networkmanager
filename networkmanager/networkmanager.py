@@ -717,7 +717,7 @@ class BaseSettings(object):
         within this connection. No adddresses usually indicates
         autoconfiguration
         """
-        if not self._settings.has_key('ipv4'): return False
+        if not 'ipv4' in self._settings: return False
         return len(self._settings['ipv4']['addresses']) > 0
 
     def _get_first_address(self):
@@ -732,7 +732,7 @@ class BaseSettings(object):
         Note: Does not support multiple addresses on a single connection.
         """
         addresses = []
-        if self._settings.has_key('ipv4'):
+        if 'ipv4' in self._settings:
             addresses = self._settings['ipv4']['addresses']
 
         if len(addresses) == 0:
@@ -745,7 +745,7 @@ class BaseSettings(object):
     @property
     def id(self):
         """ The 'id' or name of the connection """
-        return self._settings['connection']['id'] if self._settings['connection'].has_key('id') else None
+        return self._settings['connection']['id'] if 'id' in self._settings['connection'] else None
 
     @id.setter
     def id(self, value):
