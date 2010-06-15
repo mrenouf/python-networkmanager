@@ -159,7 +159,6 @@ def make_connection_filter(options):
 
 
 def list_connections(options, nm=NetworkManager()):
-    # TODO: Allow displaying a single connection (nm-util -l -u <uuid>)
     filt = make_connection_filter(options)
     for conn in filter(filt, nm.connections):
         display_connection(conn)
