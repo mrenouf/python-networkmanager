@@ -34,6 +34,13 @@ def device_for_hwaddr(hwaddr, nm=NetworkManager()):
         if device.hwaddress == hwaddr:
             return device
 
+def device_by_name(name, nm=NetworkManager()):
+    """Return the Device object for a given device name (eg. 'eth0' 'wlan0' 'ttyUSB1')"""
+    try:
+        return [dev for dev in nm.devices if str(dev.interface) == name][0]
+    except IndexError:
+        return None
+
 def connections_for_device(device, nm=NetworkManager()):
     hwaddr = None
     for device in nm.devices:
