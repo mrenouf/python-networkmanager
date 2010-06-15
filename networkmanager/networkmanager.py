@@ -495,7 +495,7 @@ class NetworkManager(object):
 
         for path in self.settings.ListConnections(dbus_interface=NM_SETTINGS_NAME):
             conn = Connection(self.bus, path)
-            connections[conn.settings.id] = conn
+            connections[str(conn.settings.uuid)] = conn
 
         return connections
 
@@ -504,11 +504,7 @@ class NetworkManager(object):
         Returns a single connection given a connection UUID, or None if no
         connection exists with that UUID
         """
-        for conn in self.connections:
-            if conn.settings.uuid == uuid:
-                return conn
-
-        return None
+        return self.connections_map.get(uuid)
 
     @property
     def active_connections(self):
