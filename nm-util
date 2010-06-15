@@ -148,9 +148,14 @@ def make_connection_filter(options):
     if options.device:
         def devfilt(conn):
             dev = device_by_name(options.device)
-            if dev is None: return False
-            if dev.hwaddress is None: return False
-            return str(dev.hwaddress) == conn.settings.mac_address
+            try:
+                return str(dev.hwaddress) == conn.settings.mac_address
+            except AttributeError:
+                # dev.hwaddress is not there
+                return False
+            except NameError:
+                # dev is not there
+                return False
 
     def connection_filter(conn):
         return typefilt(conn) and devfilt(conn)
