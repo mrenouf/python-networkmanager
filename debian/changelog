@@ -1,3 +1,10 @@
+python-networkmanager (0.5) karmic; urgency=low
+
+  [ Daenyth ]
+  * Release to karmic stable
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Tue, 22 Jun 2010 15:33:36 -0400
+
 python-networkmanager (0.5~proposed1) karmic-proposed; urgency=low
 
   [ Daenyth ]
