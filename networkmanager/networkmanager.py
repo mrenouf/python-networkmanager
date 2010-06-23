@@ -506,6 +506,13 @@ class NetworkManager(object):
         """
         return self.connections_map.get(uuid)
 
+    def get_connections_by_id(self, id):
+        """
+        Returns a list of connections that have the specified id, or None
+        if no connections exist with that id
+        """
+        return filter(lambda con: con.settings.id == id, self.connections) or None
+
     @property
     def active_connections(self):
         return [ActiveConnection(self.bus, path)
