@@ -724,7 +724,7 @@ class BaseSettings(object):
         Internal function
 
         Returns True if there is at least one address assigned
-        within this connection. No adddresses usually indicates
+        within this connection. No addresses usually indicates
         autoconfiguration
         """
         if not 'ipv4' in self._settings: return False
