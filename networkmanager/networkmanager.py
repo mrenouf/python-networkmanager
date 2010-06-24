@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import dbus
-import enum
 import socket
 import ipaddr
 
@@ -41,159 +40,162 @@ NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
 NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
 
-State = enum.new("State",
+
+class Enum(object):
+    @classmethod
+    def from_value(self, val):
+        return [key for key in self.__dict__ if
+                key[0] != '_' and
+                self.__dict__[key] == val][0]
+
+class State(Enum):
     # The NetworkManager daemon is in an unknown state.
-    UNKNOWN = 0,
+    UNKNOWN = 0
     # The NetworkManager daemon is asleep and all interfaces managed by it are inactive.
-    ASLEEP = 1,
+    ASLEEP = 1
     # The NetworkManager daemon is connecting a device.
     # FIXME: What does this mean when one device is active and another is connecting?
-    CONNECTING = 2,
+    CONNECTING = 2
     # The NetworkManager daemon is connected.
-    CONNECTED = 3,
+    CONNECTED = 3
     # The NetworkManager daemon is disconnected.
     DISCONNECTED = 4
-)
 
-DeviceType = enum.new("DeviceType", UNKNOWN=0, ETHERNET=1, WIFI=2, GSM=3, CDMA=4)
+class DeviceType(Enum):
+    UNKNOWN, ETHERNET, WIFI, GSM, CDMA = range(5)
 
-DeviceState = enum.new("DeviceState",
+class DeviceState(Enum):
     #The device is in an unknown state.
-    UNKNOWN = 0,
+    UNKNOWN = 0
     #The device is not managed by NetworkManager.
-    UNMANAGED = 1,
+    UNMANAGED = 1
     #The device cannot be used (carrier off, rfkill, etc).
-    UNAVAILABLE = 2,
+    UNAVAILABLE = 2
     #The device is not connected.
-    DISCONNECTED = 3,
+    DISCONNECTED = 3
     #The device is preparing to connect.
-    PREPARE = 4,
+    PREPARE = 4
     #The device is being configured.
-    CONFIG = 5,
+    CONFIG = 5
     #The device is awaiting secrets necessary to continue connection.
-    NEED_AUTH = 6,
+    NEED_AUTH = 6
     #The IP settings of the device are being requested and configured.
-    IP_CONFIG = 7,
+    IP_CONFIG = 7
     #The device is active.
-    ACTIVATED = 8,
+    ACTIVATED = 8
     #The device is in a failure state following an attempt to activate it.
-    FAILED = 9,
-)
+    FAILED = 9
 
-ActiveConnectionState = enum.new("ActiveConnectionState",
+class ActiveConnectionState(Enum):
     #The active connection is in an unknown state.
-    UNKNOWN = 0,
+    UNKNOWN = 0
     #The connection is activating.
-    ACTIVATING = 1,
+    ACTIVATING = 1
     #The connection is activated.
-    ACTIVATED = 2,
-)
+    ACTIVATED = 2
 
-DeviceCap = enum.new("DeviceCap",
-    NONE = 0,
-    SUPPORTED = 1,
-    CARRIER_DETECT = 2,
-)
+class DeviceCap(Enum):
+    NONE = 0
+    SUPPORTED = 1
+    CARRIER_DETECT = 2
 
 # NM_802_11_MODE
-WifiMode = enum.new("WifiMode",
+class WifiMode(Enum):
     #Mode is unknown.
-    UNKNOWN = 0,
+    UNKNOWN = 0
     #Uncoordinated network without central infrastructure.
-    ADHOC = 1,
+    ADHOC = 1
     #Coordinated network with one or more central controllers.
-    INFRA = 2,
-)
+    INFRA = 2
 
 # NM_DEVICE_STATE_REASON
-DeviceStateReason = enum.new("DeviceStateReason",
+class DeviceStateReason(Enum):
     #The reason for the device state change is unknown.
-    UNKNOWN = 0,
+    UNKNOWN = 0
     #The state change is normal.
-    NONE = 1,
+    NONE = 1
     #The device is now managed.
-    NOW_MANAGED = 2,
+    NOW_MANAGED = 2
     #The device is no longer managed.
-    NOW_UNMANAGED = 3,
+    NOW_UNMANAGED = 3
     #The device could not be readied for configuration.
-    CONFIG_FAILED = 4,
+    CONFIG_FAILED = 4
     #IP configuration could not be reserved (no available address, timeout, etc).
-    CONFIG_UNAVAILABLE = 5,
+    CONFIG_UNAVAILABLE = 5
     #The IP configuration is no longer valid.
-    CONFIG_EXPIRED = 6,
+    CONFIG_EXPIRED = 6
     #Secrets were required, but not provided.
-    NO_SECRETS = 7,
+    NO_SECRETS = 7
     #The 802.1X supplicant disconnected from the access point or authentication server.
-    SUPPLICANT_DISCONNECT = 8,
+    SUPPLICANT_DISCONNECT = 8
     #Configuration of the 802.1X supplicant failed.
-    SUPPLICANT_CONFIG_FAILED = 9,
+    SUPPLICANT_CONFIG_FAILED = 9
     #The 802.1X supplicant quit or failed unexpectedly.
-    SUPPLICANT_FAILED = 10,
+    SUPPLICANT_FAILED = 10
     #The 802.1X supplicant took too long to authenticate.
-    SUPPLICANT_TIMEOUT = 11,
+    SUPPLICANT_TIMEOUT = 11
     #The PPP service failed to start within the allowed time.
-    PPP_START_FAILED = 12,
+    PPP_START_FAILED = 12
     #The PPP service disconnected unexpectedly.
-    PPP_DISCONNECT = 13,
+    PPP_DISCONNECT = 13
     #The PPP service quit or failed unexpectedly.
-    PPP_FAILED = 14,
+    PPP_FAILED = 14
     #The DHCP service failed to start within the allowed time.
-    DHCP_START_FAILED = 15,
+    DHCP_START_FAILED = 15
     #The DHCP service reported an unexpected error.
-    DHCP_ERROR = 16,
+    DHCP_ERROR = 16
     #The DHCP service quit or failed unexpectedly.
-    DHCP_FAILED = 17,
+    DHCP_FAILED = 17
     #The shared connection service failed to start.
-    SHARED_START_FAILED = 18,
+    SHARED_START_FAILED = 18
     #The shared connection service quit or failed unexpectedly.
-    SHARED_FAILED = 19,
+    SHARED_FAILED = 19
     #The AutoIP service failed to start.
-    AUTOIP_START_FAILED = 20,
+    AUTOIP_START_FAILED = 20
     #The AutoIP service reported an unexpected error.
-    AUTOIP_ERROR = 21,
+    AUTOIP_ERROR = 21
     #The AutoIP service quit or failed unexpectedly.
-    AUTOIP_FAILED = 22,
+    AUTOIP_FAILED = 22
     #Dialing failed because the line was busy.
-    MODEM_BUSY = 23,
+    MODEM_BUSY = 23
     #Dialing failed because there was no dial tone.
-    MODEM_NO_DIAL_TONE = 24,
+    MODEM_NO_DIAL_TONE = 24
     #Dialing failed because there was carrier.
-    MODEM_NO_CARRIER = 25,
+    MODEM_NO_CARRIER = 25
     #Dialing timed out.
-    MODEM_DIAL_TIMEOUT = 26,
+    MODEM_DIAL_TIMEOUT = 26
     #Dialing failed.
-    MODEM_DIAL_FAILED = 27,
+    MODEM_DIAL_FAILED = 27
     #Modem initialization failed.
-    MODEM_INIT_FAILED = 28,
+    MODEM_INIT_FAILED = 28
     #Failed to select the specified GSM APN.
-    GSM_APN_FAILED = 29,
+    GSM_APN_FAILED = 29
     #Not searching for networks.
-    GSM_REGISTRATION_NOT_SEARCHING = 30,
+    GSM_REGISTRATION_NOT_SEARCHING = 30
     #Network registration was denied.
-    GSM_REGISTRATION_DENIED = 31,
+    GSM_REGISTRATION_DENIED = 31
     #Network registration timed out.
-    GSM_REGISTRATION_TIMEOUT = 32,
+    GSM_REGISTRATION_TIMEOUT = 32
     #Failed to register with the requested GSM network.
-    GSM_REGISTRATION_FAILED = 33,
+    GSM_REGISTRATION_FAILED = 33
     #PIN check failed.
-    GSM_PIN_CHECK_FAILED = 34,
+    GSM_PIN_CHECK_FAILED = 34
     #Necessary firmware for the device may be missing.
-    FIRMWARE_MISSING = 35,
+    FIRMWARE_MISSING = 35
     #The device was removed.
-    REMOVED = 36,
+    REMOVED = 36
     #NetworkManager went to sleep.
-    SLEEPING = 37,
+    SLEEPING = 37
     #The device's active connection was removed or disappeared.
-    CONNECTION_REMOVED = 38,
+    CONNECTION_REMOVED = 38
     #A user or client requested the disconnection.
-    USER_REQUESTED = 39,
+    USER_REQUESTED = 39
     #The device's carrier/link changed.
-    CARRIER = 40,
+    CARRIER = 40
     #The device's existing connection was assumed.
-    CONNECTION_ASSUMED = 41,
+    CONNECTION_ASSUMED = 41
     #The 802.1x supplicant is now available.
-    SUPPLICANT_AVAILABLE = 42,
-)
+    SUPPLICANT_AVAILABLE = 42
 
 def network_int_to_ip4addr(n):
     return str(ipaddr.IPAddress(socket.ntohl(n), version=4))
