@@ -43,10 +43,10 @@ NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
 
 class Enum(object):
     @classmethod
-    def from_value(self, val):
-        return [key for key in self.__dict__ if
+    def from_value(cls, val):
+        return [key for key in cls.__dict__ if
                 key[0] != '_' and
-                self.__dict__[key] == val][0]
+                cls.__dict__[key] == val][0]
 
 class State(Enum):
     # The NetworkManager daemon is in an unknown state.
