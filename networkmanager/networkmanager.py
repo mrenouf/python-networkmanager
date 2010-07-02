@@ -95,9 +95,7 @@ class ActiveConnectionState(Enum):
     ACTIVATED = 2
 
 class DeviceCap(Enum):
-    NONE = 0
-    SUPPORTED = 1
-    CARRIER_DETECT = 2
+    NONE, SUPPORTED, CARRIER_DETECT = range(3)
 
 # NM_802_11_MODE
 class WifiMode(Enum):
