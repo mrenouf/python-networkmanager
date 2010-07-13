@@ -220,6 +220,8 @@ def netmask_to_prefixlen(netmask):
     return prefixlen
 
 class Device(object):
+    _NM_INTERFACE = NM_DEVICE
+
     def __new__(cls, bus, path):
         _subclasses = {
             DeviceType.ETHERNET: DeviceWired,
@@ -245,13 +247,16 @@ class Device(object):
     def disconnect(self):
         self.proxy.Disconnect()
 
+    def _proxy_get(self, target):
+        return self.proxy.Get(self._NM_INTERFACE, target)
+
     @property
     def udi(self):
-        return self.proxy.Get(NM_DEVICE, "Udi")
+        return self._proxy_get("Udi")
 
     @property
     def interface(self):
-        return self.proxy.Get(NM_DEVICE, "Interface")
+        return self._proxy_get("Interface")
 
     @property
     def hwaddress(self):
@@ -259,12 +264,12 @@ class Device(object):
 
     @property
     def driver(self):
-        return self.proxy.Get(NM_DEVICE, "Driver")
+        return self._proxy_get("Driver")
 
     @property
     def capabilities(self):
         caps = []
-        value = self.proxy.Get(NM_DEVICE, "Capabilities")
+        value = self._proxy_get("Capabilities")
         if value & 0x01:
             caps.append(DeviceCap.SUPPORTED)
         if value & 0x02:
@@ -278,7 +283,7 @@ class Device(object):
 
     @property
     def state(self):
-        return DeviceState.from_value(self.proxy.Get(NM_DEVICE, "State"))
+        return DeviceState.from_value(self._proxy_get("State"))
 
     @property
     def ip4config(self):
@@ -294,30 +299,34 @@ class Device(object):
 
     @property
     def managed(self):
-        return self.proxy.Get(NM_DEVICE, "Managed") == 1
+        return self._proxy_get("Managed") == 1
 
     @property
     def type(self):
-        return DeviceType.from_value(self.proxy.Get(NM_DEVICE, "DeviceType"))
+        return DeviceType.from_value(self._proxy_get("DeviceType"))
 
 class DeviceWired(Device):
+    _NM_INTERFACE = NM_DEVICE_WIRED
+
     def __init__(self, bus, object_path):
         Device.__init__(self, bus, object_path)
 
     @property
     def hwaddress(self):
-        return self.proxy.Get(NM_DEVICE_WIRED, 'HwAddress')
+        return self._proxy_get('HwAddress')
 
     @property
     def speed(self):
-        return self.proxy.Get(NM_DEVICE_WIRED, 'Speed')
+        return self._proxy_get('Speed')
 
     @property
     def carrier(self):
-        return self.proxy.Get(NM_DEVICE_WIRED, 'Carrier')
+        return self._proxy_get('Carrier')
 
 
 class DeviceWireless(Device):
+    _NM_INTERFACE = NM_DEVICE_WIRELESS
+
     def __init__(self, bus, object_path):
         Device.__init__(self, bus, object_path)
 
@@ -328,39 +337,41 @@ class DeviceWireless(Device):
 
     @property
     def hwaddress(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS, "HwAddress")
+        return self._proxy_get("HwAddress")
 
     @property
     def mode(self):
-        return WifiMode.from_value(self.proxy.Get(NM_DEVICE_WIRELESS, "Mode"))
+        return WifiMode.from_value(self._proxy_get("Mode"))
 
     @property
     def bitrate(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS, "Bitrate")
+        return self._proxy_get("Bitrate")
 
     @property
     def active_access_point(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS, "ActiveAccessPoint")
+        return self._proxy_get("ActiveAccessPoint")
 
     @property
     def wireless_capabilities(self):
-        return self.proxy.Get(NM_DEVICE_WIRELESS, "WirelessCapabilities")
+        return self._proxy_get("WirelessCapabilities")
 
 class DeviceCdma(Device):
+    _NM_INTERFACE = NM_DEVICE_CDMA
+
     def __init__(self, bus, object_path):
         Device.__init__(self, bus, object_path)
 
     @property
     def number(self):
-        return self.proxy.Get(NM_DEVICE_CDMA, "Number")
+        return self._proxy_get("Number")
 
     @property
     def username(self):
-        return self.proxy.Get(NM_DEVICE_CDMA, "Username")
+        return self._proxy_get("Username")
 
     @property
     def password(self):
-        return self.proxy.Get(NM_DEVICE_CDMA, "Password")
+        return self._proxy_get("Password")
 
 class IP4Config(object):
     def __init__(self, bus, path):
@@ -403,44 +414,49 @@ class IP4Config(object):
                     self.proxy.Get(NM_IP4CONFIG, "Routes")]
 
 class AccessPoint(object):
+    _NM_INTERFACE = NM_ACCESSPOINT
+
     def __init__(self, bus, path):
         self.proxy = bus.get_object(NM_NAME, path)
 
+    def _proxy_get(self, target):
+        return self.proxy.Get(self._NM_INTERFACE, target)
+
     @property
     def flags(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "Flags")
+        return self._proxy_get("Flags")
 
     @property
     def wpaflags(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "WpaFlags")
+        return self._proxy_get("WpaFlags")
 
     @property
     def rsnflags(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "RsnFlags")
+        return self._proxy_get("RsnFlags")
 
     @property
     def ssid(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "Ssid")
+        return self._proxy_get("Ssid")
 
     @property
     def frequency(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "Frequency")
+        return self._proxy_get("Frequency")
 
     @property
     def hwaddress(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "HwAddress")
+        return self._proxy_get("HwAddress")
 
     @property
     def mode(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "Mode")
+        return self._proxy_get("Mode")
 
     @property
     def maxbitrate(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "MaxBitrate")
+        return self._proxy_get("MaxBitrate")
 
     @property
     def strength(self):
-        return self.proxy.Get(NM_ACCESSPOINT, "Strength")
+        return self._proxy_get("Strength")
 
 
 class NetworkManager(object):
@@ -456,6 +472,9 @@ class NetworkManager(object):
 
     def sleep(self, sleep):
         pass
+
+    def _proxy_get(self, target):
+        return self.proxy.Get(self._NM_INTERFACE, target)
 
     @property
     def devices(self):
@@ -558,6 +577,8 @@ class NetworkManager(object):
         return State.from_value(self.proxy.Get(NM_NAME, "State"))
 
 class ActiveConnection():
+    _NM_INTERFACE = NM_CONN_ACTIVE
+
     def __init__(self, bus, path):
         self.bus = bus
         self.proxy = bus.get_object(NM_NAME, path)
@@ -565,35 +586,38 @@ class ActiveConnection():
     def __repr__(self):
         return "<ActiveConnection: %s>" % self.connection.settings.id
 
+    def _proxy_get(self, target):
+        return self.proxy.Get(self._NM_INTERFACE, target)
+
     @property
     def service_name(self):
-        return self.proxy.Get(NM_CONN_ACTIVE, "ServiceName")
+        return self._proxy_get("ServiceName")
 
     @property
     def connection(self):
-        path = self.proxy.Get(NM_CONN_ACTIVE, "Connection")
+        path = self._proxy_get("Connection")
         return Connection(self.bus, path)
 
     @property
     def specific_object(self):
-        return self.proxy.Get(NM_CONN_ACTIVE, "SpecificObject")
+        return self._proxy_get("SpecificObject")
 
     @property
     def devices(self):
-        return [Device(self.bus, path) for path in self.proxy.Get(NM_CONN_ACTIVE, "Devices")]
+        return [Device(self.bus, path) for path in self._proxy_get("Devices")]
 
     @property
     def state(self):
         return ActiveConnectionState.from_value(
-            self.proxy.Get(NM_CONN_ACTIVE, "State"))
+            self._proxy_get("State"))
 
     @property
     def default(self):
-        return self.proxy.Get(NM_CONN_ACTIVE, "Default")
+        return self._proxy_get("Default")
 
     @property
     def vpn(self):
-        return self.proxy.Get(NM_CONN_ACTIVE, "Vpn")
+        return self._proxy_get("Vpn")
 
 class Connection():
     def __init__(self, bus, path):
