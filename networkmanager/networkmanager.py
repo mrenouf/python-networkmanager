@@ -38,6 +38,8 @@ NM_SETTINGS_NAME="org.freedesktop.NetworkManagerSettings"
 NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
 NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
+NM_ACCESSPOINT_NAME="org.freedesktop.NetworkManager.AccessPoint"
+
 NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
 
 
@@ -406,39 +408,39 @@ class AccessPoint(object):
 
     @property
     def flags(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Flags")
 
     @property
     def wpaflags(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "WpaFlags")
 
     @property
     def rsnflags(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "RsnFlags")
 
     @property
     def ssid(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Ssid")
 
     @property
     def frequency(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Frequency")
 
     @property
     def hwaddress(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "HwAddress")
 
     @property
     def mode(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Mode")
 
     @property
     def maxbitrate(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "MaxBitrate")
 
     @property
     def strength(self):
-        pass
+        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Strength")
 
 
 class NetworkManager(object):
