@@ -38,7 +38,7 @@ NM_SETTINGS_NAME="org.freedesktop.NetworkManagerSettings"
 NM_SETTINGS_PATH="/org/freedesktop/NetworkManagerSettings"
 NM_SETTINGS_CONNECTION="org.freedesktop.NetworkManagerSettings.Connection"
 
-NM_ACCESSPOINT_NAME="org.freedesktop.NetworkManager.AccessPoint"
+NM_ACCESSPOINT="org.freedesktop.NetworkManager.AccessPoint"
 
 NM_IP4CONFIG="org.freedesktop.NetworkManager.IP4Config"
 
@@ -408,39 +408,39 @@ class AccessPoint(object):
 
     @property
     def flags(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Flags")
+        return self.proxy.Get(NM_ACCESSPOINT, "Flags")
 
     @property
     def wpaflags(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "WpaFlags")
+        return self.proxy.Get(NM_ACCESSPOINT, "WpaFlags")
 
     @property
     def rsnflags(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "RsnFlags")
+        return self.proxy.Get(NM_ACCESSPOINT, "RsnFlags")
 
     @property
     def ssid(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Ssid")
+        return self.proxy.Get(NM_ACCESSPOINT, "Ssid")
 
     @property
     def frequency(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Frequency")
+        return self.proxy.Get(NM_ACCESSPOINT, "Frequency")
 
     @property
     def hwaddress(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "HwAddress")
+        return self.proxy.Get(NM_ACCESSPOINT, "HwAddress")
 
     @property
     def mode(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Mode")
+        return self.proxy.Get(NM_ACCESSPOINT, "Mode")
 
     @property
     def maxbitrate(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "MaxBitrate")
+        return self.proxy.Get(NM_ACCESSPOINT, "MaxBitrate")
 
     @property
     def strength(self):
-        return self.proxy.Get(NM_ACCESSPOINT_NAME, "Strength")
+        return self.proxy.Get(NM_ACCESSPOINT, "Strength")
 
 
 class NetworkManager(object):
