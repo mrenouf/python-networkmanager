@@ -258,6 +258,9 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     nm.add_connection(settings)
 
 def modify_connection(parser, options, args, nm=NetworkManager()):
+    types = {'wired': '802-3-ethernet',
+             'wireless': '802-11-wireless',
+             'cdma':'cdma',}
     uuid = options.ensure_value('uuid', None)
 
     if uuid is None:
@@ -269,7 +272,7 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
         parser.error("Modify: the uuid does not match an existing connection")
 
     settings = conn.settings
-    if options.type and conn.settings.type != options.type:
+    if options.type and conn.settings.type != types[options.type]:
         parser.error("Modify: cannot change the type of a connection. Use --create")
 
     # FIXME: Code duplication vs create_connection()
