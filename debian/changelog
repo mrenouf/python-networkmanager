@@ -1,3 +1,18 @@
+python-networkmanager (0.5.1~proposed1) karmic-proposed; urgency=low
+
+  [ Daenyth ]
+  * nm.py: add NM::get_connections_by_id()
+
+  [ Ozan Çağlayan ]
+  * networkmanager.py: Implement AccessPoint getters
+
+  [ Daenyth ]
+  * nm-util: Allow --modify to work with -t
+
+  * Other minor cleanup and improvements
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 21 Jul 2010 19:49:48 -0400
+
 python-networkmanager (0.5) karmic; urgency=low
 
   [ Daenyth ]
