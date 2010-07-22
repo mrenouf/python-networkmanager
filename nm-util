@@ -253,7 +253,7 @@ def create_connection(parser, options, args, nm=NetworkManager()):
     possible_settings = ('dns','num','user','pass')
     for s in possible_settings:
         if s in params:
-            settings.s = params[s]
+            setattr(settings, s, params[s])
 
     nm.add_connection(settings)
 
@@ -291,7 +291,7 @@ def modify_connection(parser, options, args, nm=NetworkManager()):
     possible_settings = ('dns','num','user','pass')
     for s in possible_settings:
         if s in params:
-            settings.s = params[s]
+            setattr(settings, s, params[s])
 
     conn.update(settings)
 
