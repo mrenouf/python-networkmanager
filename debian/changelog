@@ -1,3 +1,9 @@
+python-networkmanager (0.5.1~proposed2) karmic-proposed; urgency=low
+
+  * nm-util: Fix bug in connection parsing
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 21 Jul 2010 20:04:45 -0400
+
 python-networkmanager (0.5.1~proposed1) karmic-proposed; urgency=low
 
   [ Daenyth ]
