@@ -338,7 +338,13 @@ def activate_connection(parser, options, nm=NetworkManager()):
         parser.error("Activate: there are no network devices "
                      "available for this type of connection")
 
-    nm.activate_connection(conn, device)
+    try:
+        nm.activate_connection(conn, device)
+    except dbus.exceptions.DBusException, e:
+        if str(e).startswith('org.freedesktop.NetworkManager.UnmanagedDevice'):
+            parser.error("Activate: device (%s) not currently managed" % device.interface)
+        else:
+            raise
 
 def deactivate_connection(parser, options, nm=NetworkManager()):
     uuid = options.ensure_value('uuid', None)
