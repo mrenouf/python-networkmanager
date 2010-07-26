@@ -434,13 +434,13 @@ def main(argv=None):
                         dest="id",
                         help="the id (name) to use for the connection")
 
-    details_group.add_option("-t",
+    details_group.add_option("-t", "--type",
                         choices=['wired','wireless', 'cdma'],
                         action="store",
                         dest="type",
                         help="the connection type [wired|wireless|cdma]")
 
-    details_group.add_option("-d",
+    details_group.add_option("-d", "--device",
                         action="store",
                         dest="device",
                         help="the network device to act on (ethX, wlanX, etc)")
