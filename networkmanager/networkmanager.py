@@ -244,6 +244,9 @@ class Device(object):
     def __repr__(self):
         return "<Device: %s [%s]>" % (self.interface, self.hwaddress)
 
+    def __str__(self):
+        return self.interface
+
     def disconnect(self):
         self.proxy.Disconnect()
 
