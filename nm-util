@@ -139,7 +139,6 @@ def make_connection_filter(options):
     types = {'wired': '802-3-ethernet',
              'wireless': '802-11-wireless',
              'cdma':'cdma',}
-    uuidfilt = lambda x: True
 
     filters = []
 
