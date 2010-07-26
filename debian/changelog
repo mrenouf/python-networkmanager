@@ -1,3 +1,22 @@
+python-networkmanager (0.5.1) karmic; urgency=low
+
+  * Release to karmic stable
+  * Fix static ip config via nm-util
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 21 Jul 2010 20:37:12 -0400
+
+python-networkmanager (0.5.1~proposed3) karmic-proposed; urgency=low
+
+  * Revert "nm.py: Remove the old enum class for a better, smaller one"
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 21 Jul 2010 20:27:17 -0400
+
+python-networkmanager (0.5.1~proposed2) karmic-proposed; urgency=low
+
+  * nm-util: Fix bug in connection parsing
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 21 Jul 2010 20:04:45 -0400
+
 python-networkmanager (0.5.1~proposed1) karmic-proposed; urgency=low
 
   [ Daenyth ]
