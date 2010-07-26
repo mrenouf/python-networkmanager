@@ -139,12 +139,12 @@ def make_connection_filter(options):
     types = {'wired': '802-3-ethernet',
              'wireless': '802-11-wireless',
              'cdma':'cdma',}
-    typefilt = lambda x: True
-    devfilt = lambda x: True
     uuidfilt = lambda x: True
 
+    filters = []
+
     if options.type:
-        typefilt = lambda conn: types[options.type] == str(conn.settings.type)
+        filters.append(lambda conn: types[options.type] == str(conn.settings.type))
 
     if options.device:
         def devfilt(conn):
@@ -157,12 +157,13 @@ def make_connection_filter(options):
             except NameError:
                 # dev is not there
                 return False
+        filters.append(devfilt)
 
     if options.uuid:
-        uuidfilt = lambda conn: options.uuid == conn.settings.uuid
+        filters.append(lambda conn: options.uuid == conn.settings.uuid)
 
     def connection_filter(conn):
-        return typefilt(conn) and devfilt(conn) and uuidfilt(conn)
+        return all(map(lambda f: f(conn), filters))
 
     return connection_filter
 
