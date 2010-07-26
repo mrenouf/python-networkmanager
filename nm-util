@@ -141,6 +141,7 @@ def make_connection_filter(options):
              'cdma':'cdma',}
     typefilt = lambda x: True
     devfilt = lambda x: True
+    uuidfilt = lambda x: True
 
     if options.type:
         typefilt = lambda conn: types[options.type] == str(conn.settings.type)
@@ -157,8 +158,11 @@ def make_connection_filter(options):
                 # dev is not there
                 return False
 
+    if options.uuid:
+        uuidfilt = lambda conn: options.uuid == conn.settings.uuid
+
     def connection_filter(conn):
-        return typefilt(conn) and devfilt(conn)
+        return typefilt(conn) and devfilt(conn) and uuidfilt(conn)
 
     return connection_filter
 
