@@ -925,14 +925,11 @@ class BaseSettings(object):
 
         Only accesses the first DNS address defined
         """
-        if not self._has_address():
-            return False
-
-        if len(self._settings['ipv4']['dns']) == 0:
-            return None
-        else:
+        try:
             value = self._settings['ipv4']['dns'][0]
             return network_int_to_ip4addr(value)
+        except IndexError:
+            return None
 
     @dns.setter
     def dns(self, address):
