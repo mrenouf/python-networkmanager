@@ -303,7 +303,7 @@ def delete_connection(parser, options, nm=NetworkManager()):
     uuid = options.ensure_value('uuid', None)
 
     if uuid is None:
-        parser.error("Create: you must supply a connection uuid.")
+        parser.error("Delete: you must supply a connection uuid.")
 
     conn = nm.get_connection(uuid)
     if conn is None:
