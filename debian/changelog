@@ -1,3 +1,13 @@
+python-networkmanager (0.5.2) karmic; urgency=low
+
+  [ Daenyth ]
+  * nm-util: Handle UnmanagedDevice exception in activate_connection()
+  * nm-util: Implement --list filtering by uuid
+  * nm-util: Add long options --type and --device for -t/-d
+  * nm-util: Fix copy/paste error in --delete error output
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Wed, 28 Jul 2010 18:12:23 -0400
+
 python-networkmanager (0.5.2~proposed1) karmic-proposed; urgency=low
 
   [ Daenyth ]
