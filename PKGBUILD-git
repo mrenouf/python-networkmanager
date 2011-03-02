@@ -14,7 +14,7 @@ source=()
 md5sums=() #generate with 'makepkg -g'
 
 
-_gitroot="git://github.com/tweakt/python-networkmanager.git"
+_gitroot="git://github.com/mrenouf/python-networkmanager.git"
 _gitname="python-networkmanager"
 
 build() {
