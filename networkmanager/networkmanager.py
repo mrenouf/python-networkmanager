@@ -931,11 +931,14 @@ class BaseSettings(object):
         try:
             value = self._settings['ipv4']['dns'][0]
             return network_int_to_ip4addr(value)
-        except IndexError:
+        except (IndexError, KeyError):
             return None
 
     @dns.setter
     def dns(self, address):
+        if not 'ipv4' in self._settings:
+            ipv4_settings = dbus.Dictionary({'ipv4': dbus.Dictionary({})})
+            self._settings.update(ipv4_settings)
         self._settings['ipv4']['dns'] = dbus.Array([ip4addr_to_network_int(address)], signature='u')
 
 class WirelessSettings(BaseSettings):
