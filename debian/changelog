@@ -1,3 +1,13 @@
+python-networkmanager (0.5.2lucid1) lucid; urgency=low
+
+  [ Daenyth ]
+  * Change shebangs to python2
+  * PKGBUILD-git: Update git url for name change
+  * networkmanager: Check for ipv4 settings block presence when setting
+    dns
+
+ -- Gavin Bisesi <gavin.bisesi@aerva.com>  Fri, 10 Jun 2011 13:56:02 -0400
+
 python-networkmanager (0.5.2) karmic; urgency=low
 
   [ Daenyth ]
